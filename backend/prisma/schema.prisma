@@ -4,12 +4,13 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 
@@ -92,9 +93,30 @@ model User {
   email               String   @unique
   passwordHash        String
   role                UserRole @default(STAFF)
+  isEmailVerified     Boolean  @default(false)
   refreshTokenVersion Int      @default(0)
+  otpTokens           OtpToken[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model OtpToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       OtpType
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, type])
 }
 
 model Customer {
@@ -134,3 +156,4 @@ model OrderItem {
   quantity    Int
   unitPrice   Int             // price AT TIME OF ORDER, not a live reference
 }
+

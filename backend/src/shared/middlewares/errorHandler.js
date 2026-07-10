@@ -1,4 +1,4 @@
-const env = require("../../config/env");
+const env = require("../../../config/env");
 const { AppError } = require("../errors/AppError");
 
 // eslint-disable-next-line no-unused-vars

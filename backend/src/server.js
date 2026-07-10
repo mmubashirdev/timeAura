@@ -1,5 +1,5 @@
 const app = require("./app");
-const env = require("./config/env");
+const env = require("../config/env");
 
 const server = app.listen(env.PORT, () => {
   console.log(`Time Aura backend running on port ${env.PORT}`);

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const env = require("../../config/env");
+const env = require("../../../config/env");
 
 function generateAccessToken(payload) {
   return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {

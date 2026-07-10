@@ -5,7 +5,7 @@ const compression = require("compression");
 const cookieParser = require("cookie-parser");
 const pinoHttp = require("pino-http");
 
-const authRoutes = require("./modules/auth/auth.routes");
+const authRoutes = require("./features/auth/auth.routes");
 const errorHandler = require("./shared/middlewares/errorHandler");
 const { NotFoundError } = require("./shared/errors/AppError");
 

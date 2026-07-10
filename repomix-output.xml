@@ -1,0 +1,3096 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+backend/
+  config/
+    env.js
+    prisma.js
+  prisma/
+    migrations/
+      20260710120611_add_otp_and_email_verification/
+        migration.sql
+      migration_lock.toml
+    schema.prisma
+  src/
+    features/
+      auth/
+        auth.controller.js
+        auth.repository.js
+        auth.routes.js
+        auth.schema.js
+        auth.service.js
+        auth.validation.js
+        auth.validators.js
+    middlewares/
+      auth.middleware.js
+    routes/
+      index.js
+    shared/
+      constants/
+        httpStatus.js
+        roles.js
+      errors/
+        AppError.js
+      middlewares/
+        authGuard.js
+        errorHandler.js
+        rateLimiter.js
+        validateRequest.js
+      prisma/
+        client.js
+      utils/
+        asyncHandler.js
+        jwt.js
+        mailer.js
+        otp.js
+        password.js
+        sendResponse.js
+    app.js
+    server.js
+  .gitignore
+  Dockerfile
+  jsconfig.json
+  package.json
+  prisma.config.ts
+  README.md
+  repomix-output.xml
+frontend/
+  app/
+    favicon.ico
+    globals.css
+    layout.js
+    page.js
+  public/
+    file.svg
+    globe.svg
+    next.svg
+    vercel.svg
+    window.svg
+  .dockerignore
+  .gitignore
+  AGENTS.md
+  CLAUDE.md
+  Dockerfile
+  eslint.config.mjs
+  jsconfig.json
+  next.config.mjs
+  package.json
+  postcss.config.mjs
+  README.md
+.gitignore
+ARCHITECTURE.md
+DEVELOPMENT.md
+docker-compose.yml
+LICENSE
+PROJECT_CONTEXT.md
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="backend/prisma/migrations/20260710120611_add_otp_and_email_verification/migration.sql">
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED');
+
+-- CreateEnum
+CREATE TYPE "PaymentMethod" AS ENUM ('COD', 'JAZZCASH', 'EASYPAISA', 'CARD');
+
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'STAFF');
+
+-- CreateEnum
+CREATE TYPE "OtpType" AS ENUM ('EMAIL_VERIFICATION', 'PASSWORD_RESET');
+
+-- CreateTable
+CREATE TABLE "Category" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Product" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "description" TEXT,
+    "categoryId" INTEGER NOT NULL,
+    "basePrice" INTEGER NOT NULL,
+    "compareAtPrice" INTEGER,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductImage" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "url" TEXT NOT NULL,
+    "altText" TEXT,
+    "position" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductVariant" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "sku" TEXT NOT NULL,
+    "optionName" TEXT NOT NULL,
+    "optionValue" TEXT NOT NULL,
+    "priceOverride" INTEGER,
+    "stock" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "ProductVariant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'STAFF',
+    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "refreshTokenVersion" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OtpToken" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "type" "OtpType" NOT NULL,
+    "codeHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "consumedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OtpToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Customer" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "email" TEXT,
+    "address" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Customer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Order" (
+    "id" SERIAL NOT NULL,
+    "customerId" INTEGER NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "paymentMethod" "PaymentMethod" NOT NULL,
+    "totalAmount" INTEGER NOT NULL,
+    "trackingNumber" TEXT,
+    "courier" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" SERIAL NOT NULL,
+    "orderId" INTEGER NOT NULL,
+    "variantId" INTEGER NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "unitPrice" INTEGER NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
+
+-- CreateIndex
+CREATE INDEX "Product_categoryId_idx" ON "Product"("categoryId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductVariant_sku_key" ON "ProductVariant"("sku");
+
+-- CreateIndex
+CREATE INDEX "ProductVariant_productId_idx" ON "ProductVariant"("productId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "OtpToken_userId_type_idx" ON "OtpToken"("userId", "type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Customer_phone_key" ON "Customer"("phone");
+
+-- CreateIndex
+CREATE INDEX "Order_customerId_idx" ON "Order"("customerId");
+
+-- CreateIndex
+CREATE INDEX "Order_status_idx" ON "Order"("status");
+
+-- AddForeignKey
+ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductVariant" ADD CONSTRAINT "ProductVariant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OtpToken" ADD CONSTRAINT "OtpToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+</file>
+
+<file path="backend/prisma/migrations/migration_lock.toml">
+# Please do not edit this file manually
+# It should be added in your version-control system (e.g., Git)
+provider = "postgresql"
+</file>
+
+<file path="backend/src/features/auth/auth.validation.js">
+const { z } = require("zod");
+
+const registerSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const emailOnlySchema = z.object({
+  email: z.string().email(),
+});
+
+const verifyEmailSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+});
+
+const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+module.exports = {
+  registerSchema,
+  loginSchema,
+  emailOnlySchema,
+  verifyEmailSchema,
+  resetPasswordSchema,
+};
+</file>
+
+<file path="backend/src/shared/constants/roles.js">
+module.exports = {
+  ADMIN: "ADMIN",
+  STAFF: "STAFF",
+};
+</file>
+
+<file path="backend/src/shared/middlewares/authGuard.js">
+const { verifyAccessToken } = require("../utils/jwt");
+const { UnauthorizedError, ForbiddenError } = require("../errors/AppError");
+
+function authGuard(...allowedRoles) {
+  return (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return next(new UnauthorizedError("Missing access token"));
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const payload = verifyAccessToken(token);
+      if (allowedRoles.length && !allowedRoles.includes(payload.role)) {
+        return next(new ForbiddenError("Insufficient permissions"));
+      }
+      req.user = payload;
+      next();
+    } catch (err) {
+      next(new UnauthorizedError("Invalid or expired access token"));
+    }
+  };
+}
+
+module.exports = authGuard;
+</file>
+
+<file path="backend/src/shared/middlewares/errorHandler.js">
+const env = require("../../../config/env");
+const { AppError } = require("../errors/AppError");
+
+// eslint-disable-next-line no-unused-vars
+function errorHandler(err, req, res, next) {
+  const isKnown = err instanceof AppError;
+  const statusCode = isKnown ? err.statusCode : 500;
+
+  req.log?.error({ err, path: req.path, method: req.method }, "Request failed");
+
+  res.status(statusCode).json({
+    success: false,
+    message: isKnown ? err.message : "Internal server error",
+    ...(isKnown && err.details ? { details: err.details } : {}),
+    ...(env.NODE_ENV === "development" && !isKnown ? { stack: err.stack } : {}),
+  });
+}
+
+module.exports = errorHandler;
+</file>
+
+<file path="backend/src/shared/middlewares/rateLimiter.js">
+const rateLimit = require("express-rate-limit");
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many attempts, please try again later.",
+  },
+});
+
+// Stricter: prevents email-bombing a victim's inbox via forgot-password/resend spam
+const otpRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please wait before requesting another code.",
+  },
+});
+
+module.exports = { authLimiter, otpRequestLimiter };
+</file>
+
+<file path="backend/src/shared/middlewares/validateRequest.js">
+const { ValidationError } = require("../errors/AppError");
+
+const validateRequest = (schema) => (req, res, next) => {
+  const result = schema.safeParse(req.body);
+  if (!result.success) {
+    return next(
+      new ValidationError(
+        "Validation failed",
+        result.error.flatten().fieldErrors,
+      ),
+    );
+  }
+  req.body = result.data; // use the parsed & typed data downstream, not the raw body
+  next();
+};
+
+module.exports = validateRequest;
+</file>
+
+<file path="backend/src/shared/utils/mailer.js">
+const nodemailer = require("nodemailer");
+const env = require("../../../config/env");
+
+const transporter = nodemailer.createTransport({
+  host: env.SMTP_HOST,
+  port: Number(env.SMTP_PORT),
+  secure: Number(env.SMTP_PORT) === 465,
+  auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+});
+
+async function sendMail({ to, subject, html }) {
+  return transporter.sendMail({ from: env.EMAIL_FROM, to, subject, html });
+}
+
+module.exports = { sendMail };
+</file>
+
+<file path="backend/src/shared/utils/otp.js">
+const crypto = require("crypto");
+
+function generateOtp() {
+  // 6-digit numeric code, zero-padded
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
+function hashOtp(code) {
+  return crypto.createHash("sha256").update(code).digest("hex");
+}
+
+function compareOtp(code, hash) {
+  return hashOtp(code) === hash;
+}
+
+module.exports = { generateOtp, hashOtp, compareOtp };
+</file>
+
+<file path="backend/README.md">
+MVC
+
+Repository Pattern
+
+Prisma
+
+Authentication
+
+JWT
+
+OTP
+
+Validation
+
+Middleware
+
+
+
+Routes
+
+POST /signup
+
+POST /login
+
+POST /verify-email
+
+POST /forgot-password
+
+POST /reset-password
+
+GET /products
+
+POST /orders
+</file>
+
+<file path="backend/repomix-output.xml">
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+config/
+  env.js
+  prisma.js
+prisma/
+  schema.prisma
+src/
+  features/
+    auth/
+      auth.controller.js
+      auth.repository.js
+      auth.routes.js
+      auth.schema.js
+      auth.service.js
+      auth.validations.js
+      auth.validators.js
+  middlewares/
+    auth.middleware.js
+  routes/
+    index.js
+  shared/
+    constants/
+      httpStatus.js
+      role.js
+    errors/
+      AppError.js
+    middleware/
+      authGuard.js
+      errorHandler.js
+      rateLimiter.js
+      validateRequest.js
+    prisma/
+      client.js
+    utils/
+      asyncHandler.js
+      jwt.js
+      password.js
+      sendResponse.js
+  app.js
+  server.js
+.gitignore
+Dockerfile
+jsconfig.json
+package.json
+prisma.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="config/env.js">
+const { z } = require("zod");
+
+const envSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.string().default("5000"),
+  DATABASE_URL: z.string().min(1),
+  ACCESS_TOKEN_SECRET: z
+    .string()
+    .min(32, "ACCESS_TOKEN_SECRET must be at least 32 chars"),
+  REFRESH_TOKEN_SECRET: z
+    .string()
+    .min(32, "REFRESH_TOKEN_SECRET must be at least 32 chars"),
+  ACCESS_TOKEN_TTL: z.string().default("15m"),
+  REFRESH_TOKEN_TTL: z.string().default("7d"),
+  BCRYPT_SALT_ROUNDS: z.string().default("12"),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error("❌ Invalid environment variables:");
+  console.error(parsed.error.flatten().fieldErrors);
+  process.exit(1); // crash on boot, not on the first request that needs the missing var
+}
+
+module.exports = parsed.data;
+</file>
+
+<file path="config/prisma.js">
+const { PrismaClient } = require("@prisma/client");
+const env = require("./env");
+
+const prisma = new PrismaClient({
+  log:
+    env.NODE_ENV === "development"
+      ? ["query", "warn", "error"]
+      : ["warn", "error"],
+});
+
+module.exports = prisma;
+</file>
+
+<file path="prisma/schema.prisma">
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentMethod {
+  COD
+  JAZZCASH
+  EASYPAISA
+  CARD
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique   // "Watches", "Wallets", "Perfumes"
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id              Int              @id @default(autoincrement())
+  name            String
+  slug            String           @unique
+  description     String?
+  categoryId      Int
+  category        Category         @relation(fields: [categoryId], references: [id])
+  basePrice       Int              // stored in whole PKR, no floats
+  compareAtPrice  Int?             // the "Rs. 5,999" struck-through price
+  images          ProductImage[]
+  variants        ProductVariant[]
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  position  Int      @default(0)
+}
+
+// Generic variant model — a watch might have "Strap Color: Rose Gold",
+// a perfume might have "Size: 50ml". Don't hardcode columns per product type.
+model ProductVariant {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku         String    @unique
+  optionName  String    // e.g. "Color", "Size"
+  optionValue String    // e.g. "Rose Gold", "50ml"
+  priceOverride Int?    // null = use product.basePrice
+  stock       Int       @default(0)
+  orderItems  OrderItem[]
+
+  @@index([productId])
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  email               String   @unique
+  passwordHash        String
+  role                UserRole @default(STAFF)
+  refreshTokenVersion Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique   // Pakistani market: phone is the real identity, not email
+  email     String?
+  address   String
+  city      String
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  customerId    Int
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod
+  totalAmount   Int           // snapshot total, in PKR — never recompute from live prices later
+  trackingNumber String?
+  courier       String?
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          Int             @id @default(autoincrement())
+  orderId     Int
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId   Int
+  variant     ProductVariant  @relation(fields: [variantId], references: [id])
+  quantity    Int
+  unitPrice   Int             // price AT TIME OF ORDER, not a live reference
+}
+</file>
+
+<file path="src/features/auth/auth.controller.js">
+const authService = require("./auth.service");
+const sendResponse = require("../../shared/utils/sendResponse");
+const httpStatus = require("../../shared/constants/httpStatus");
+const env = require("../../config/env");
+
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: env.NODE_ENV === "production",
+  sameSite: "strict",
+  path: "/api/v1/auth", // cookie only sent to auth routes, not the whole API surface
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+class AuthController {
+  async register(req, res) {
+    const { user, accessToken, refreshToken } = await authService.register(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      message: "Account created",
+      data: { user, accessToken },
+    });
+  }
+
+  async login(req, res) {
+    const { user, accessToken, refreshToken } = await authService.login(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, { message: "Logged in", data: { user, accessToken } });
+  }
+
+  async refresh(req, res) {
+    const { user, accessToken, refreshToken } = await authService.refresh(
+      req.cookies.refreshToken,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, {
+      message: "Token refreshed",
+      data: { user, accessToken },
+    });
+  }
+
+  async logout(req, res) {
+    await authService.logout(req.user.sub);
+    res.clearCookie("refreshToken", { path: "/api/v1/auth" });
+    sendResponse(res, { message: "Logged out" });
+  }
+}
+
+module.exports = new AuthController();
+</file>
+
+<file path="src/features/auth/auth.repository.js">
+const prisma = require("../../config/prisma");
+
+// The ONLY file in the app allowed to talk to Prisma for User data.
+// If you swap Prisma for Drizzle tomorrow, this is the only file that changes.
+class AuthRepository {
+  findByEmail(email) {
+    return prisma.user.findUnique({ where: { email } });
+  }
+
+  findById(id) {
+    return prisma.user.findUnique({ where: { id } });
+  }
+
+  create({ name, email, passwordHash, role }) {
+    return prisma.user.create({ data: { name, email, passwordHash, role } });
+  }
+
+  incrementTokenVersion(userId) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenVersion: { increment: 1 } },
+    });
+  }
+}
+
+module.exports = new AuthRepository();
+</file>
+
+<file path="src/features/auth/auth.routes.js">
+const express = require("express");
+const authController = require("./auth.controller");
+const validateRequest = require("../../shared/middlewares/validateRequest");
+const asyncHandler = require("../../shared/utils/asyncHandler");
+const authGuard = require("../../shared/middlewares/authGuard");
+const { authLimiter } = require("../../shared/middlewares/rateLimiter");
+const { registerSchema, loginSchema } = require("./auth.validation");
+
+const router = express.Router();
+
+router.post(
+  "/register",
+  authLimiter,
+  validateRequest(registerSchema),
+  asyncHandler(authController.register),
+);
+router.post(
+  "/login",
+  authLimiter,
+  validateRequest(loginSchema),
+  asyncHandler(authController.login),
+);
+router.post("/refresh", asyncHandler(authController.refresh));
+router.post("/logout", authGuard(), asyncHandler(authController.logout));
+
+module.exports = router;
+</file>
+
+<file path="src/features/auth/auth.schema.js">
+
+</file>
+
+<file path="src/features/auth/auth.service.js">
+const authRepository = require("./auth.repository");
+const { hash, compare } = require("../../shared/utils/password");
+const {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} = require("../../shared/utils/jwt");
+const {
+  ConflictError,
+  UnauthorizedError,
+} = require("../../shared/errors/AppError");
+const roles = require("../../shared/constants/roles");
+
+function toSafeUser(user) {
+  // Never let passwordHash leave this layer. This is the DTO boundary.
+  return { id: user.id, name: user.name, email: user.email, role: user.role };
+}
+
+function issueTokens(user) {
+  const payload = { sub: user.id, role: user.role };
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken({
+    ...payload,
+    tokenVersion: user.refreshTokenVersion,
+  });
+  return { accessToken, refreshToken };
+}
+
+class AuthService {
+  async register({ name, email, password }) {
+    const existing = await authRepository.findByEmail(email);
+    if (existing) {
+      throw new ConflictError("An account with this email already exists");
+    }
+
+    const passwordHash = await hash(password);
+    const user = await authRepository.create({
+      name,
+      email,
+      passwordHash,
+      role: roles.STAFF,
+    });
+
+    const tokens = issueTokens(user);
+    return { user: toSafeUser(user), ...tokens };
+  }
+
+  async login({ email, password }) {
+    const user = await authRepository.findByEmail(email);
+
+    // Deliberately identical error for "no such user" and "wrong password".
+    // Distinguishing them lets an attacker enumerate valid admin emails.
+    if (!user) {
+      throw new UnauthorizedError("Invalid email or password");
+    }
+
+    const passwordMatches = await compare(password, user.passwordHash);
+    if (!passwordMatches) {
+      throw new UnauthorizedError("Invalid email or password");
+    }
+
+    const tokens = issueTokens(user);
+    return { user: toSafeUser(user), ...tokens };
+  }
+
+  async refresh(refreshToken) {
+    if (!refreshToken) {
+      throw new UnauthorizedError("Missing refresh token");
+    }
+
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch {
+      throw new UnauthorizedError("Invalid or expired refresh token");
+    }
+
+    const user = await authRepository.findById(payload.sub);
+
+    // If the DB's version has moved on (logout / password reset), reject.
+    if (!user || user.refreshTokenVersion !== payload.tokenVersion) {
+      throw new UnauthorizedError("Refresh token has been invalidated");
+    }
+
+    const tokens = issueTokens(user); // rotation: old refresh token is now stale by role/version comparison
+    return { user: toSafeUser(user), ...tokens };
+  }
+
+  async logout(userId) {
+    await authRepository.incrementTokenVersion(userId);
+  }
+}
+
+module.exports = new AuthService();
+</file>
+
+<file path="src/features/auth/auth.validations.js">
+const { z } = require("zod");
+
+const registerSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+module.exports = { registerSchema, loginSchema };
+</file>
+
+<file path="src/features/auth/auth.validators.js">
+
+</file>
+
+<file path="src/middlewares/auth.middleware.js">
+
+</file>
+
+<file path="src/routes/index.js">
+
+</file>
+
+<file path="src/shared/constants/httpStatus.js">
+module.exports = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  INTERNAL_SERVER_ERROR: 500,
+};
+</file>
+
+<file path="src/shared/constants/role.js">
+module.exports = {
+  ADMIN: "ADMIN",
+  STAFF: "STAFF",
+};
+</file>
+
+<file path="src/shared/errors/AppError.js">
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = true; // distinguishes "expected" errors from bugs
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(message, details = null) {
+    super(message, 400);
+    this.details = details;
+  }
+}
+
+class UnauthorizedError extends AppError {
+  constructor(message = "Unauthorized") {
+    super(message, 401);
+  }
+}
+
+class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super(message, 403);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(message = "Resource not found") {
+    super(message, 404);
+  }
+}
+
+class ConflictError extends AppError {
+  constructor(message = "Conflict") {
+    super(message, 409);
+  }
+}
+
+module.exports = {
+  AppError,
+  ValidationError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+};
+</file>
+
+<file path="src/shared/middleware/authGuard.js">
+const { verifyAccessToken } = require("../utils/jwt");
+const { UnauthorizedError, ForbiddenError } = require("../errors/AppError");
+
+function authGuard(...allowedRoles) {
+  return (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return next(new UnauthorizedError("Missing access token"));
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const payload = verifyAccessToken(token);
+      if (allowedRoles.length && !allowedRoles.includes(payload.role)) {
+        return next(new ForbiddenError("Insufficient permissions"));
+      }
+      req.user = payload;
+      next();
+    } catch (err) {
+      next(new UnauthorizedError("Invalid or expired access token"));
+    }
+  };
+}
+
+module.exports = authGuard;
+</file>
+
+<file path="src/shared/middleware/errorHandler.js">
+const env = require("../../config/env");
+const { AppError } = require("../errors/AppError");
+
+// eslint-disable-next-line no-unused-vars
+function errorHandler(err, req, res, next) {
+  const isKnown = err instanceof AppError;
+  const statusCode = isKnown ? err.statusCode : 500;
+
+  req.log?.error({ err, path: req.path, method: req.method }, "Request failed");
+
+  res.status(statusCode).json({
+    success: false,
+    message: isKnown ? err.message : "Internal server error",
+    ...(isKnown && err.details ? { details: err.details } : {}),
+    ...(env.NODE_ENV === "development" && !isKnown ? { stack: err.stack } : {}),
+  });
+}
+
+module.exports = errorHandler;
+</file>
+
+<file path="src/shared/middleware/rateLimiter.js">
+const rateLimit = require("express-rate-limit");
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many attempts, please try again later.",
+  },
+});
+
+module.exports = { authLimiter };
+</file>
+
+<file path="src/shared/middleware/validateRequest.js">
+const { ValidationError } = require("../errors/AppError");
+
+const validateRequest = (schema) => (req, res, next) => {
+  const result = schema.safeParse(req.body);
+  if (!result.success) {
+    return next(
+      new ValidationError(
+        "Validation failed",
+        result.error.flatten().fieldErrors,
+      ),
+    );
+  }
+  req.body = result.data; // use the parsed & typed data downstream, not the raw body
+  next();
+};
+
+module.exports = validateRequest;
+</file>
+
+<file path="src/shared/prisma/client.js">
+
+</file>
+
+<file path="src/shared/utils/asyncHandler.js">
+// Wraps every controller so a rejected promise or thrown error
+// is forwarded to Express's error pipeline instead of crashing the process.
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = asyncHandler;
+</file>
+
+<file path="src/shared/utils/jwt.js">
+const jwt = require("jsonwebtoken");
+const env = require("../../config/env");
+
+function generateAccessToken(payload) {
+  return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
+    expiresIn: env.ACCESS_TOKEN_TTL,
+  });
+}
+
+function generateRefreshToken(payload) {
+  return jwt.sign(payload, env.REFRESH_TOKEN_SECRET, {
+    expiresIn: env.REFRESH_TOKEN_TTL,
+  });
+}
+
+function verifyAccessToken(token) {
+  return jwt.verify(token, env.ACCESS_TOKEN_SECRET);
+}
+
+function verifyRefreshToken(token) {
+  return jwt.verify(token, env.REFRESH_TOKEN_SECRET);
+}
+
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+};
+</file>
+
+<file path="src/shared/utils/password.js">
+const bcrypt = require("bcrypt");
+const env = require("../../config/env");
+
+const SALT_ROUNDS = parseInt(env.BCRYPT_SALT_ROUNDS, 10);
+
+async function hash(plainText) {
+  return bcrypt.hash(plainText, SALT_ROUNDS);
+}
+
+async function compare(plainText, hashedValue) {
+  return bcrypt.compare(plainText, hashedValue);
+}
+
+module.exports = { hash, compare };
+</file>
+
+<file path="src/shared/utils/sendResponse.js">
+function sendResponse(
+  res,
+  { statusCode = 200, message = "Success", data = null },
+) {
+  return res.status(statusCode).json({ success: true, message, data });
+}
+
+module.exports = sendResponse;
+</file>
+
+<file path="src/app.js">
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const compression = require("compression");
+const cookieParser = require("cookie-parser");
+const pinoHttp = require("pino-http");
+
+const authRoutes = require("./modules/auth/auth.routes");
+const errorHandler = require("./shared/middlewares/errorHandler");
+const { NotFoundError } = require("./shared/errors/AppError");
+
+const app = express();
+
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  }),
+);
+app.use(compression());
+app.use(express.json());
+app.use(cookieParser());
+app.use(pinoHttp());
+
+app.use("/api/v1/auth", authRoutes);
+
+// Anything unmatched falls through to a consistent 404, not Express's default HTML page
+app.use((req, res, next) =>
+  next(new NotFoundError(`Route ${req.originalUrl} not found`)),
+);
+
+app.use(errorHandler); // must be registered LAST
+
+module.exports = app;
+</file>
+
+<file path="src/server.js">
+const app = require("./app");
+const env = require("./config/env");
+
+const server = app.listen(env.PORT, () => {
+  console.log(`Time Aura backend running on port ${env.PORT}`);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection, shutting down:", err);
+  server.close(() => process.exit(1));
+});
+</file>
+
+<file path=".gitignore">
+node_modules
+# Keep environment variables out of version control
+.env
+
+/src/generated/prisma
+</file>
+
+<file path="Dockerfile">
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 5000
+CMD ["npm", "run", "dev"]
+</file>
+
+<file path="jsconfig.json">
+{
+  "compilerOptions": {
+    "checkJs": false
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Marketplace for buying and selling products",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "Muhammad Mubashir",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "prisma": "^6.19.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}
+</file>
+
+<file path="prisma.config.ts">
+// This file was generated by Prisma, and assumes you have installed the following:
+// npm install --save-dev prisma dotenv
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"] || "",
+  },
+});
+</file>
+
+</files>
+</file>
+
+<file path="frontend/.dockerignore">
+node_modules
+.next
+.git
+</file>
+
+<file path="ARCHITECTURE.md">
+Client
+
+↓
+
+Next.js
+
+↓
+
+REST API
+
+↓
+
+Express
+
+↓
+
+Controller
+
+↓
+
+Service
+
+↓
+
+Repository
+
+↓
+
+Prisma
+
+↓
+
+PostgreSQL
+</file>
+
+<file path="DEVELOPMENT.md">
+npm install
+
+docker compose up --build
+
+docker compose exec backend npx prisma migrate dev
+
+docker compose exec backend npx prisma generate
+
+docker compose exec backend node prisma/seed.js
+
+docker compose down
+
+docker compose logs -f backend
+
+docker compose logs -f frontend
+
+
+Common debugging.
+
+Permission issues
+
+sudo chown -R $USER:$USER .
+
+Delete node_modules
+
+Delete .next
+
+docker compose build --no-cache
+
+docker compose up --build
+</file>
+
+<file path="PROJECT_CONTEXT.md">
+TimeAura is a premium e-commerce platform for luxury watches, wallets and perfumes.
+
+Primary audience:
+- Pakistani customers
+
+Admin Features
+- Product management
+- Category management
+- Orders
+- Customers
+- Staff
+
+Customer Features
+- Browse products
+- Cart
+- Checkout
+- Order tracking
+- Authentication
+
+Future Features
+- Reviews
+- Wishlist
+- Coupons
+- Recommendations
+
+
+TECH STACK
+Frontend
+- Next.js 16
+- React
+- Tailwind
+- TypeScript (future)
+
+Backend
+- Node.js
+- Express
+- Prisma
+
+Database
+- PostgreSQL
+
+Infrastructure
+- Docker
+- Docker Compose
+
+Authentication
+- JWT
+- Refresh Tokens
+- Email OTP
+
+Payments
+- JazzCash
+- Easypaisa
+- Stripe (future)
+
+
+Coding Standards
+Never use floating prices.
+
+Always store money in integer PKR.
+
+Repository Pattern.
+
+Service Layer.
+
+Controller Layer.
+
+Business logic never inside controller.
+
+Prisma only inside repositories.
+
+Use async/await everywhere.
+
+Never mix CommonJS and ES Modules.
+
+Always use environment variables.
+
+Never expose secrets.
+
+
+
+Folder Responsibilities
+Frontend owns:
+
+UI
+Components
+Pages
+Hooks
+API Client
+
+Backend owns:
+
+Controllers
+Services
+Repositories
+Middleware
+Database
+Validation
+
+
+
+Naming Convention
+camelCase
+
+PascalCase
+
+kebab-case
+
+UPPER_CASE
+
+Database
+
+singular models
+
+plural tables
+
+Repository
+
+AuthRepository
+
+Service
+
+AuthService
+
+Controller
+
+AuthController
+
+
+
+Auth Flow
+
+Authentication Flow
+
+Explain login flow.
+
+Signup
+
+↓
+
+Generate OTP
+
+↓
+
+Email Verification
+
+↓
+
+Create User
+
+↓
+
+Login
+
+↓
+
+JWT Access Token
+
+↓
+
+Refresh Token
+
+↓
+
+Protected Routes
+</file>
+
+<file path="backend/config/env.js">
+const { z } = require("zod");
+
+const envSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.string().default("5000"),
+  DATABASE_URL: z.string().min(1),
+  ACCESS_TOKEN_SECRET: z.string().min(32),
+  REFRESH_TOKEN_SECRET: z.string().min(32),
+  ACCESS_TOKEN_TTL: z.string().default("15m"),
+  REFRESH_TOKEN_TTL: z.string().default("7d"),
+  BCRYPT_SALT_ROUNDS: z.string().default("12"),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.string().default("587"),
+  SMTP_USER: z.string().min(1),
+  SMTP_PASS: z.string().min(1),
+  EMAIL_FROM: z.string().default("Time Aura <timeaura.online@gmail.com>"),
+  OTP_TTL_MINUTES: z.string().default("10"),
+  OTP_MAX_ATTEMPTS: z.string().default("5"),
+});
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error("❌ Invalid environment variables:");
+  console.error(parsed.error.flatten().fieldErrors);
+  process.exit(1); // crash on boot, not on the first request that needs the missing var
+}
+
+module.exports = parsed.data;
+</file>
+
+<file path="backend/config/prisma.js">
+const { PrismaClient } = require("../src/generated/prisma");
+const env = require("./env");
+
+const prisma = new PrismaClient({
+  log:
+    env.NODE_ENV === "development"
+      ? ["query", "warn", "error"]
+      : ["warn", "error"],
+});
+
+module.exports = prisma;
+</file>
+
+<file path="backend/src/features/auth/auth.repository.js">
+const prisma = require("../../../config/prisma");
+
+class AuthRepository {
+  findByEmail(email) {
+    return prisma.user.findUnique({ where: { email } });
+  }
+
+  findById(id) {
+    return prisma.user.findUnique({ where: { id } });
+  }
+
+  create({ name, email, passwordHash, role }) {
+    return prisma.user.create({ data: { name, email, passwordHash, role } });
+  }
+
+  incrementTokenVersion(userId) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { refreshTokenVersion: { increment: 1 } },
+    });
+  }
+
+  markEmailVerified(userId) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { isEmailVerified: true },
+    });
+  }
+
+  updatePasswordAndBumpVersion(userId, passwordHash) {
+    // Bumping the token version here invalidates every existing session
+    // the moment a password is reset — a stolen refresh token becomes useless.
+    return prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, refreshTokenVersion: { increment: 1 } },
+    });
+  }
+
+  createOtp({ userId, type, codeHash, expiresAt }) {
+    return prisma.otpToken.create({
+      data: { userId, type, codeHash, expiresAt },
+    });
+  }
+
+  findLatestActiveOtp(userId, type) {
+    return prisma.otpToken.findFirst({
+      where: { userId, type, consumedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  consumeOtp(otpId) {
+    return prisma.otpToken.update({
+      where: { id: otpId },
+      data: { consumedAt: new Date() },
+    });
+  }
+
+  incrementOtpAttempts(otpId) {
+    return prisma.otpToken.update({
+      where: { id: otpId },
+      data: { attempts: { increment: 1 } },
+    });
+  }
+
+  invalidateActiveOtps(userId, type) {
+    // Ensures only one valid code exists at a time — resending
+    // shouldn't leave an old code silently valid alongside the new one.
+    return prisma.otpToken.updateMany({
+      where: { userId, type, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+  }
+}
+
+module.exports = new AuthRepository();
+</file>
+
+<file path="backend/src/features/auth/auth.schema.js">
+
+</file>
+
+<file path="backend/src/features/auth/auth.validators.js">
+
+</file>
+
+<file path="backend/src/middlewares/auth.middleware.js">
+
+</file>
+
+<file path="backend/src/routes/index.js">
+
+</file>
+
+<file path="backend/src/shared/constants/httpStatus.js">
+module.exports = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  INTERNAL_SERVER_ERROR: 500,
+};
+</file>
+
+<file path="backend/src/shared/errors/AppError.js">
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = true; // distinguishes "expected" errors from bugs
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(message, details = null) {
+    super(message, 400);
+    this.details = details;
+  }
+}
+
+class UnauthorizedError extends AppError {
+  constructor(message = "Unauthorized") {
+    super(message, 401);
+  }
+}
+
+class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super(message, 403);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(message = "Resource not found") {
+    super(message, 404);
+  }
+}
+
+class ConflictError extends AppError {
+  constructor(message = "Conflict") {
+    super(message, 409);
+  }
+}
+
+module.exports = {
+  AppError,
+  ValidationError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+};
+</file>
+
+<file path="backend/src/shared/prisma/client.js">
+
+</file>
+
+<file path="backend/src/shared/utils/asyncHandler.js">
+// Wraps every controller so a rejected promise or thrown error
+// is forwarded to Express's error pipeline instead of crashing the process.
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = asyncHandler;
+</file>
+
+<file path="backend/src/shared/utils/jwt.js">
+const jwt = require("jsonwebtoken");
+const env = require("../../../config/env");
+
+function generateAccessToken(payload) {
+  return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
+    expiresIn: env.ACCESS_TOKEN_TTL,
+  });
+}
+
+function generateRefreshToken(payload) {
+  return jwt.sign(payload, env.REFRESH_TOKEN_SECRET, {
+    expiresIn: env.REFRESH_TOKEN_TTL,
+  });
+}
+
+function verifyAccessToken(token) {
+  return jwt.verify(token, env.ACCESS_TOKEN_SECRET);
+}
+
+function verifyRefreshToken(token) {
+  return jwt.verify(token, env.REFRESH_TOKEN_SECRET);
+}
+
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+};
+</file>
+
+<file path="backend/src/shared/utils/password.js">
+const bcrypt = require("bcrypt");
+const env = require("../..//../config/env");
+
+const SALT_ROUNDS = parseInt(env.BCRYPT_SALT_ROUNDS, 10);
+
+async function hash(plainText) {
+  return bcrypt.hash(plainText, SALT_ROUNDS);
+}
+
+async function compare(plainText, hashedValue) {
+  return bcrypt.compare(plainText, hashedValue);
+}
+
+module.exports = { hash, compare };
+</file>
+
+<file path="backend/src/shared/utils/sendResponse.js">
+function sendResponse(
+  res,
+  { statusCode = 200, message = "Success", data = null },
+) {
+  return res.status(statusCode).json({ success: true, message, data });
+}
+
+module.exports = sendResponse;
+</file>
+
+<file path="backend/.gitignore">
+node_modules
+# Keep environment variables out of version control
+.env
+
+/src/generated/prisma
+</file>
+
+<file path="backend/Dockerfile">
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY prisma ./prisma/
+COPY . .
+EXPOSE 5000
+CMD ["npm", "run", "dev"]
+</file>
+
+<file path="backend/jsconfig.json">
+{
+  "compilerOptions": {
+    "checkJs": false
+  }
+}
+</file>
+
+<file path="frontend/app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+</file>
+
+<file path="frontend/app/layout.js">
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+</file>
+
+<file path="frontend/app/page.js">
+import Image from "next/image";
+
+export default function Home() {
+  return (
+    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <Image
+          className="dark:invert"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={100}
+          height={20}
+          priority
+        />
+        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            To get started, edit the page.js file.
+          </h1>
+          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            Looking for a starting point or more instructions? Head over to{" "}
+            <a
+              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Templates
+            </a>{" "}
+            or the{" "}
+            <a
+              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Learning
+            </a>{" "}
+            center.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <a
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className="dark:invert"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={16}
+              height={16}
+            />
+            Deploy Now
+          </a>
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Documentation
+          </a>
+        </div>
+      </main>
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="frontend/public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="frontend/public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="frontend/public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="frontend/public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path="frontend/.gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="frontend/AGENTS.md">
+Project uses:
+
+Node.js
+
+Express
+
+Prisma
+
+Repository Pattern
+
+Never place database queries in controllers.
+
+Always validate using Zod.
+
+Controllers must stay thin.
+
+Business logic belongs in services.
+
+Prisma belongs in repositories.
+
+Money stored as integers.
+
+Do not introduce Redux.
+
+Prefer React Context.
+
+Follow existing folder structure.
+
+Use Docker for local development.
+
+Do not modify generated Prisma files.
+
+Never hardcode secrets.
+</file>
+
+<file path="frontend/CLAUDE.md">
+@AGENTS.md
+You are working on TimeAura.
+
+Always preserve architecture.
+
+Never refactor entire folders unless requested.
+
+Follow existing naming conventions.
+
+Prefer readability over cleverness.
+
+Never duplicate logic.
+
+Keep controllers thin.
+
+Keep services reusable.
+
+Never change Prisma schema without migrations.
+</file>
+
+<file path="frontend/Dockerfile">
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+CMD ["npm", "run", "dev"]
+</file>
+
+<file path="frontend/eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="frontend/jsconfig.json">
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
+</file>
+
+<file path="frontend/next.config.mjs">
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+</file>
+
+<file path="frontend/package.json">
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+  "next": "^16.2.10",
+  "react": "^19.2.4",
+  "react-dom": "^19.2.4"
+},
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "^4"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
+  }
+}
+</file>
+
+<file path="frontend/postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="frontend/README.md">
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+App Router
+
+Folder Structure
+
+Components
+
+Layouts
+
+Auth
+
+API Calls
+
+Middleware
+
+Protected Routes
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2026 Muhammad Mubashir
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="backend/prisma/schema.prisma">
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentMethod {
+  COD
+  JAZZCASH
+  EASYPAISA
+  CARD
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique   // "Watches", "Wallets", "Perfumes"
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id              Int              @id @default(autoincrement())
+  name            String
+  slug            String           @unique
+  description     String?
+  categoryId      Int
+  category        Category         @relation(fields: [categoryId], references: [id])
+  basePrice       Int              // stored in whole PKR, no floats
+  compareAtPrice  Int?             // the "Rs. 5,999" struck-through price
+  images          ProductImage[]
+  variants        ProductVariant[]
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([categoryId])
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  altText   String?
+  position  Int      @default(0)
+}
+
+// Generic variant model — a watch might have "Strap Color: Rose Gold",
+// a perfume might have "Size: 50ml". Don't hardcode columns per product type.
+model ProductVariant {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku         String    @unique
+  optionName  String    // e.g. "Color", "Size"
+  optionValue String    // e.g. "Rose Gold", "50ml"
+  priceOverride Int?    // null = use product.basePrice
+  stock       Int       @default(0)
+  orderItems  OrderItem[]
+
+  @@index([productId])
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model User {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  email               String   @unique
+  passwordHash        String
+  role                UserRole @default(STAFF)
+  isEmailVerified     Boolean  @default(false)
+  refreshTokenVersion Int      @default(0)
+  otpTokens           OtpToken[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model OtpToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       OtpType
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, type])
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique   // Pakistani market: phone is the real identity, not email
+  email     String?
+  address   String
+  city      String
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  customerId    Int
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod
+  totalAmount   Int           // snapshot total, in PKR — never recompute from live prices later
+  trackingNumber String?
+  courier       String?
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id          Int             @id @default(autoincrement())
+  orderId     Int
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId   Int
+  variant     ProductVariant  @relation(fields: [variantId], references: [id])
+  quantity    Int
+  unitPrice   Int             // price AT TIME OF ORDER, not a live reference
+}
+</file>
+
+<file path="backend/src/features/auth/auth.controller.js">
+const authService = require("./auth.service");
+const sendResponse = require("../../shared/utils/sendResponse");
+const httpStatus = require("../../shared/constants/httpStatus");
+const env = require("../../../config/env");
+
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: env.NODE_ENV === "production",
+  sameSite: "strict",
+  path: "/api/v1/auth", // cookie only sent to auth routes, not the whole API surface
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+class AuthController {
+  async register(req, res) {
+    const { user, accessToken, refreshToken } = await authService.register(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      message: "Account created",
+      data: { user, accessToken },
+    });
+  }
+
+  async login(req, res) {
+    const { user, accessToken, refreshToken } = await authService.login(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, { message: "Logged in", data: { user, accessToken } });
+  }
+
+  async refresh(req, res) {
+    const { user, accessToken, refreshToken } = await authService.refresh(
+      req.cookies.refreshToken,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, {
+      message: "Token refreshed",
+      data: { user, accessToken },
+    });
+  }
+
+  async logout(req, res) {
+    await authService.logout(req.user.sub);
+    res.clearCookie("refreshToken", { path: "/api/v1/auth" });
+    sendResponse(res, { message: "Logged out" });
+  }
+
+  async verifyEmail(req, res) {
+    const result = await authService.verifyEmail(req.body);
+    sendResponse(res, { message: result.message });
+  }
+
+  async resendVerification(req, res) {
+    const result = await authService.resendVerificationOtp(req.body);
+    sendResponse(res, { message: result.message });
+  }
+
+  async forgotPassword(req, res) {
+    const result = await authService.forgotPassword(req.body);
+    sendResponse(res, { message: result.message });
+  }
+
+  async resetPassword(req, res) {
+    const result = await authService.resetPassword(req.body);
+    sendResponse(res, { message: result.message });
+  }
+}
+
+module.exports = new AuthController();
+</file>
+
+<file path="backend/src/features/auth/auth.routes.js">
+const express = require("express");
+const authController = require("./auth.controller");
+const validateRequest = require("../../shared/middlewares/validateRequest");
+const asyncHandler = require("../../shared/utils/asyncHandler");
+const authGuard = require("../../shared/middlewares/authGuard");
+const {
+  authLimiter,
+  otpRequestLimiter,
+} = require("../../shared/middlewares/rateLimiter");
+const {
+  registerSchema,
+  loginSchema,
+  emailOnlySchema,
+  verifyEmailSchema,
+  resetPasswordSchema,
+} = require("./auth.validation");
+
+const router = express.Router();
+
+router.post(
+  "/register",
+  authLimiter,
+  validateRequest(registerSchema),
+  asyncHandler(authController.register),
+);
+router.post(
+  "/verify-email",
+  authLimiter,
+  validateRequest(verifyEmailSchema),
+  asyncHandler(authController.verifyEmail),
+);
+router.post(
+  "/resend-verification",
+  otpRequestLimiter,
+  validateRequest(emailOnlySchema),
+  asyncHandler(authController.resendVerification),
+);
+
+router.post(
+  "/login",
+  authLimiter,
+  validateRequest(loginSchema),
+  asyncHandler(authController.login),
+);
+
+router.post(
+  "/forgot-password",
+  otpRequestLimiter,
+  validateRequest(emailOnlySchema),
+  asyncHandler(authController.forgotPassword),
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  validateRequest(resetPasswordSchema),
+  asyncHandler(authController.resetPassword),
+);
+
+router.post("/refresh", asyncHandler(authController.refresh));
+router.post("/logout", authGuard(), asyncHandler(authController.logout));
+
+module.exports = router;
+</file>
+
+<file path="backend/src/features/auth/auth.service.js">
+const authRepository = require("./auth.repository");
+const { hash, compare } = require("../../shared/utils/password");
+const { generateOtp, hashOtp, compareOtp } = require("../../shared/utils/otp");
+const { sendMail } = require("../../shared/utils/mailer");
+const {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} = require("../../shared/utils/jwt");
+const {
+  ConflictError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+} = require("../../shared/errors/AppError");
+const roles = require("../../shared/constants/roles");
+const env = require("../../../config/env");
+
+function toSafeUser(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isEmailVerified: user.isEmailVerified,
+  };
+}
+
+function issueTokens(user) {
+  const payload = { sub: user.id, role: user.role };
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken({
+    ...payload,
+    tokenVersion: user.refreshTokenVersion,
+  });
+  return { accessToken, refreshToken };
+}
+
+const OTP_TEMPLATES = {
+  EMAIL_VERIFICATION: (code) => ({
+    subject: "Verify your Time Aura account",
+    html: `<p>Your verification code is <strong>${code}</strong>. It expires in ${env.OTP_TTL_MINUTES} minutes.</p>`,
+  }),
+  PASSWORD_RESET: (code) => ({
+    subject: "Reset your Time Aura password",
+    html: `<p>Your password reset code is <strong>${code}</strong>. It expires in ${env.OTP_TTL_MINUTES} minutes. If you didn't request this, ignore this email.</p>`,
+  }),
+};
+
+class AuthService {
+  async #issueAndSendOtp(user, type) {
+    await authRepository.invalidateActiveOtps(user.id, type);
+
+    const code = generateOtp();
+    const codeHash = hashOtp(code);
+    const expiresAt = new Date(
+      Date.now() + Number(env.OTP_TTL_MINUTES) * 60 * 1000,
+    );
+
+    await authRepository.createOtp({
+      userId: user.id,
+      type,
+      codeHash,
+      expiresAt,
+    });
+
+    const { subject, html } = OTP_TEMPLATES[type](code);
+    await sendMail({ to: user.email, subject, html });
+  }
+
+  async #verifyOtp(user, type, code) {
+    const otp = await authRepository.findLatestActiveOtp(user.id, type);
+
+    // Same generic failure path for "no code", "expired", and "wrong code" —
+    // don't let the response shape tell an attacker which case they hit.
+    if (!otp || otp.expiresAt < new Date()) {
+      throw new UnauthorizedError("Invalid or expired code");
+    }
+    if (otp.attempts >= Number(env.OTP_MAX_ATTEMPTS)) {
+      throw new ForbiddenError(
+        "Too many incorrect attempts. Please request a new code.",
+      );
+    }
+    if (!compareOtp(code, otp.codeHash)) {
+      await authRepository.incrementOtpAttempts(otp.id);
+      throw new UnauthorizedError("Invalid or expired code");
+    }
+
+    await authRepository.consumeOtp(otp.id);
+  }
+
+  async register({ name, email, password }) {
+    const existing = await authRepository.findByEmail(email);
+    if (existing) {
+      throw new ConflictError("An account with this email already exists");
+    }
+
+    const passwordHash = await hash(password);
+    const user = await authRepository.create({
+      name,
+      email,
+      passwordHash,
+      role: roles.STAFF,
+    });
+
+    await this.#issueAndSendOtp(user, "EMAIL_VERIFICATION");
+
+    // Deliberately no tokens returned — an unverified account cannot log in yet.
+    return {
+      message:
+        "Registration successful. Check your email for a verification code.",
+    };
+  }
+
+  async verifyEmail({ email, code }) {
+    const user = await authRepository.findByEmail(email);
+    if (!user) {
+      throw new NotFoundError("Account not found");
+    }
+    if (user.isEmailVerified) {
+      throw new ConflictError("Email is already verified");
+    }
+
+    await this.#verifyOtp(user, "EMAIL_VERIFICATION", code);
+    await authRepository.markEmailVerified(user.id);
+
+    return { message: "Email verified successfully. You can now log in." };
+  }
+
+  async resendVerificationOtp({ email }) {
+    const user = await authRepository.findByEmail(email);
+
+    // Same response whether or not the account exists — don't leak which emails are registered.
+    if (user && !user.isEmailVerified) {
+      await this.#issueAndSendOtp(user, "EMAIL_VERIFICATION");
+    }
+
+    return {
+      message:
+        "If an account with that email exists and is unverified, a new code has been sent.",
+    };
+  }
+
+  async login({ email, password }) {
+    const user = await authRepository.findByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedError("Invalid email or password");
+    }
+
+    const passwordMatches = await compare(password, user.passwordHash);
+    if (!passwordMatches) {
+      throw new UnauthorizedError("Invalid email or password");
+    }
+
+    if (!user.isEmailVerified) {
+      throw new ForbiddenError("Please verify your email before logging in");
+    }
+
+    const tokens = issueTokens(user);
+    return { user: toSafeUser(user), ...tokens };
+  }
+
+  async forgotPassword({ email }) {
+    const user = await authRepository.findByEmail(email);
+
+    if (user) {
+      await this.#issueAndSendOtp(user, "PASSWORD_RESET");
+    }
+
+    return {
+      message:
+        "If an account with that email exists, a reset code has been sent.",
+    };
+  }
+
+  async resetPassword({ email, code, newPassword }) {
+    const user = await authRepository.findByEmail(email);
+
+    // Generic error for both "no such account" and "wrong code" — this is an
+    // unauthenticated public endpoint, so it must not become an email-enumeration oracle.
+    if (!user) {
+      throw new UnauthorizedError("Invalid code or email");
+    }
+
+    try {
+      await this.#verifyOtp(user, "PASSWORD_RESET", code);
+    } catch {
+      throw new UnauthorizedError("Invalid code or email");
+    }
+
+    const passwordHash = await hash(newPassword);
+    await authRepository.updatePasswordAndBumpVersion(user.id, passwordHash);
+
+    return {
+      message:
+        "Password reset successful. Please log in with your new password.",
+    };
+  }
+
+  async refresh(refreshToken) {
+    if (!refreshToken) {
+      throw new UnauthorizedError("Missing refresh token");
+    }
+
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch {
+      throw new UnauthorizedError("Invalid or expired refresh token");
+    }
+
+    const user = await authRepository.findById(payload.sub);
+    if (!user || user.refreshTokenVersion !== payload.tokenVersion) {
+      throw new UnauthorizedError("Refresh token has been invalidated");
+    }
+
+    const tokens = issueTokens(user);
+    return { user: toSafeUser(user), ...tokens };
+  }
+
+  async logout(userId) {
+    await authRepository.incrementTokenVersion(userId);
+  }
+}
+
+module.exports = new AuthService();
+</file>
+
+<file path="backend/src/app.js">
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const compression = require("compression");
+const cookieParser = require("cookie-parser");
+const pinoHttp = require("pino-http");
+
+const authRoutes = require("./features/auth/auth.routes");
+const errorHandler = require("./shared/middlewares/errorHandler");
+const { NotFoundError } = require("./shared/errors/AppError");
+
+const app = express();
+
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+  }),
+);
+app.use(compression());
+app.use(express.json());
+app.use(cookieParser());
+app.use(pinoHttp());
+
+app.use("/api/v1/auth", authRoutes);
+
+// Anything unmatched falls through to a consistent 404, not Express's default HTML page
+app.use((req, res, next) =>
+  next(new NotFoundError(`Route ${req.originalUrl} not found`)),
+);
+
+app.use(errorHandler); // must be registered LAST
+
+module.exports = app;
+</file>
+
+<file path="backend/src/server.js">
+const app = require("./app");
+const env = require("../config/env");
+
+const server = app.listen(env.PORT, () => {
+  console.log(`Time Aura backend running on port ${env.PORT}`);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection, shutting down:", err);
+  server.close(() => process.exit(1));
+});
+</file>
+
+<file path="backend/package.json">
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Marketplace for buying and selling products",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "Muhammad Mubashir",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^9.0.3",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "prisma": "^6.19.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "nodemon": "^3.1.14"
+  }
+}
+</file>
+
+<file path="backend/prisma.config.ts">
+// This file was generated by Prisma, and assumes you have installed the following:
+// npm install --save-dev prisma dotenv
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"] || "",
+  },
+});
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="docker-compose.yml">
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: timeaura_postgres
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: timeaura_backend
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: sh -c "npx prisma generate && npm run dev"
+  frontend:
+    build: ./frontend
+    container_name: timeaura_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
+</file>
+
+<file path="README.md">
+# timeAura
+Marketplace for watches, perfumes, and wallets
+</file>
+
+</files>
