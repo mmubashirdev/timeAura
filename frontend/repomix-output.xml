@@ -1,0 +1,1697 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  signup/
+    page.js
+  favicon.ico
+  globals.css
+  layout.js
+  page.js
+components/
+  features/
+    auth/
+      AnimatedBackground.js
+      BrandPanel.js
+      InputField.js
+      LoadingSpinner.js
+      LuxuryLogo.js
+      PageTransition.js
+      PasswordInput.js
+    PageTransition.js
+  ui/
+    button.jsx
+    checkbox.jsx
+    input-otp.jsx
+    input.jsx
+    label.jsx
+    sonner.jsx
+    Toast.js
+lib/
+  api.js
+  utils.js
+  validations.js
+public/
+  file.svg
+  globe.svg
+  next.svg
+  vercel.svg
+  window.svg
+.dockerignore
+.gitignore
+AGENTS.md
+CLAUDE.md
+components.json
+Dockerfile
+eslint.config.mjs
+jsconfig.json
+next.config.mjs
+package.json
+postcss.config.mjs
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/signup/page.js">
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { User, Mail, Lock } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+
+import BrandPanel from "@/components/features/auth/BrandPanel";
+import PasswordInput from "@/components/features/auth/PasswordInput";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+import PageTransition from "@/components/features/PageTransition";
+
+import { registerSchema } from "@/lib/validations";
+import { authApi } from "@/lib/api";
+
+export default function SignupPage() {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      terms: false,
+    },
+  });
+
+  const onSubmit = async (values) => {
+    setSubmitting(true);
+    try {
+      // Contract: POST /auth/register  body: { name, email, password }
+      await authApi.register({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+      });
+
+      toast.success("Account created", {
+        description: "Check your email for the 6-digit verification code.",
+      });
+      router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
+    } catch (err) {
+      toast.error("Registration failed", {
+        description: err.message || "Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <PageTransition>
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-4 lg:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] bg-[#FAFAFA] rounded-2xl shadow-2xl overflow-hidden min-h-[720px]"
+        >
+          <div className="hidden lg:block">
+            <BrandPanel />
+          </div>
+
+          <div className="p-8 sm:p-12 lg:p-14 flex flex-col justify-center">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+            >
+              <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#5c0016] tracking-wide uppercase">
+                Create Your Account
+              </h2>
+              <div className="w-14 h-[3px] bg-[#C9A14A] mt-3 mb-4" />
+              <p className="text-neutral-600 text-[15px] mb-8">
+                Join Time Aura and experience timeless elegance.
+              </p>
+
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col gap-5"
+              >
+                {/* Full Name */}
+                <div className="flex flex-col gap-2">
+                  <Label
+                    htmlFor="name"
+                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
+                  >
+                    Full Name
+                  </Label>
+                  <div className="relative">
+                    <User
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400"
+                      strokeWidth={1.8}
+                    />
+                    <Input
+                      id="name"
+                      placeholder="Enter your full name"
+                      className="h-[52px] pl-10 rounded-2xl"
+                      aria-invalid={!!errors.name}
+                      {...register("name")}
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-xs text-destructive pl-1">
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div className="flex flex-col gap-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
+                  >
+                    Email Address
+                  </Label>
+                  <div className="relative">
+                    <Mail
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400"
+                      strokeWidth={1.8}
+                    />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      className="h-[52px] pl-10 rounded-2xl"
+                      aria-invalid={!!errors.email}
+                      {...register("email")}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-xs text-destructive pl-1">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Password */}
+                <div className="flex flex-col gap-2">
+                  <Label
+                    htmlFor="password"
+                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
+                  >
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Lock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400 z-10"
+                      strokeWidth={1.8}
+                    />
+                    <PasswordInput
+                      id="password"
+                      placeholder="Create a password"
+                      className="h-[52px] pl-10 rounded-2xl"
+                      aria-invalid={!!errors.password}
+                      {...register("password")}
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="text-xs text-destructive pl-1">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div className="flex flex-col gap-2">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
+                  >
+                    Confirm Password
+                  </Label>
+                  <div className="relative">
+                    <Lock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400 z-10"
+                      strokeWidth={1.8}
+                    />
+                    <PasswordInput
+                      id="confirmPassword"
+                      placeholder="Confirm your password"
+                      className="h-[52px] pl-10 rounded-2xl"
+                      aria-invalid={!!errors.confirmPassword}
+                      {...register("confirmPassword")}
+                    />
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-xs text-destructive pl-1">
+                      {errors.confirmPassword.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Terms */}
+                <div className="pt-1">
+                  <div className="flex items-start gap-3">
+                    <Controller
+                      name="terms"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="terms"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-[2px] data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
+                      )}
+                    />
+                    <Label
+                      htmlFor="terms"
+                      className="text-sm text-neutral-700 leading-relaxed font-normal"
+                    >
+                      I agree to the{" "}
+                      <a
+                        href="#"
+                        className="text-[#C9A14A] font-medium hover:underline"
+                      >
+                        Terms of Service
+                      </a>{" "}
+                      and{" "}
+                      <a
+                        href="#"
+                        className="text-[#C9A14A] font-medium hover:underline"
+                      >
+                        Privacy Policy
+                      </a>
+                    </Label>
+                  </div>
+                  {errors.terms && (
+                    <p className="text-xs text-destructive pl-8 mt-1">
+                      {errors.terms.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit */}
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="mt-2 h-[54px] rounded-2xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-sm uppercase shadow-lg shadow-[#5c0016]/20"
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <LoadingSpinner /> Creating Account...
+                    </span>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4 my-2">
+                  <div className="flex-1 h-px bg-neutral-200" />
+                  <span className="text-xs text-neutral-500 tracking-widest">
+                    OR
+                  </span>
+                  <div className="flex-1 h-px bg-neutral-200" />
+                </div>
+
+                {/* Google */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-[54px] rounded-2xl bg-white border-neutral-200 hover:bg-neutral-50 font-medium text-sm tracking-[0.1em] uppercase text-neutral-800"
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </Button>
+
+                <p className="text-center text-sm text-neutral-600 mt-4">
+                  Already have an account?{" "}
+                  <Link
+                    href="/login"
+                    className="text-[#C9A14A] font-semibold hover:underline"
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </form>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+    </PageTransition>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" className="mr-1">
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+    </svg>
+  );
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+/* @import "tw-animate-css"; */
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 1rem; /* 16px per design system */
+
+  --background: #FAFAFA;
+  --foreground: #171717;
+
+  --card: #ffffff;
+  --card-foreground: #171717;
+
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+
+  /* Primary = Maroon */
+  --primary: #800020;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+
+  /* Accent = Gold */
+  --accent: #C9A14A;
+  --accent-foreground: #171717;
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #800020;
+}
+
+.dark {
+  --background: #111111;
+  --foreground: #FAFAFA;
+  --card: #1a0a10;
+  --card-foreground: #FAFAFA;
+  --primary: #C9A14A;
+  --primary-foreground: #111111;
+  --border: #2a1a20;
+  --input: #2a1a20;
+  --ring: #C9A14A;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-inter);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* Elevate hero title */
+.elevate-title {
+  background: linear-gradient(180deg, #ffffff 0%, #f4e4d4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.script-text {
+  font-family: 'Brush Script MT', 'Segoe Script', cursive;
+  color: #d97706;
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #1a0a10; }
+::-webkit-scrollbar-thumb { background: #800020; border-radius: 4px; }
+</file>
+
+<file path="app/layout.js">
+import { Playfair_Display, Inter } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import "./globals.css";
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "900"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+export const metadata = {
+  title: "Time Aura — Timeless Style. Precision You Trust.",
+  description: "Luxury watches, wallets and perfumes.",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
+      <body>
+        {children}
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              borderRadius: "16px",
+              fontFamily: "var(--font-inter)",
+            },
+          }}
+        />
+      </body>
+    </html>
+  );
+}
+</file>
+
+<file path="app/page.js">
+import Image from "next/image";
+
+export default function Home() {
+  return (
+    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <Image
+          className="dark:invert"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={100}
+          height={20}
+          priority
+        />
+        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            To get started, edit the page.js file.
+          </h1>
+          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            Looking for a starting point or more instructions? Head over to{" "}
+            <a
+              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Templates
+            </a>{" "}
+            or the{" "}
+            <a
+              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Learning
+            </a>{" "}
+            center.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <a
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className="dark:invert"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={16}
+              height={16}
+            />
+            Deploy Now
+          </a>
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Documentation
+          </a>
+        </div>
+      </main>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/auth/AnimatedBackground.js">
+"use client";
+
+import { motion } from "framer-motion";
+import { useMemo } from "react";
+
+export default function AnimatedBackground() {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 22 }).map((_, i) => ({
+        id: i,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 3 + 1,
+        duration: Math.random() * 12 + 8,
+        delay: Math.random() * 4,
+      })),
+    [],
+  );
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.span
+          key={p.id}
+          className="absolute rounded-full bg-[#C9A14A]"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            boxShadow: "0 0 8px rgba(201, 161, 74, 0.6)",
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, 15, 0],
+            opacity: [0.2, 0.8, 0.2],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/auth/BrandPanel.js">
+"use client";
+
+import { motion } from "framer-motion";
+import { Watch, Wallet, SprayCan } from "lucide-react";
+import LuxuryLogo from "./LuxuryLogo";
+import AnimatedBackground from "./AnimatedBackground";
+
+const categories = [
+  { icon: Watch, label: "WATCHES" },
+  { icon: Wallet, label: "WALLETS" },
+  { icon: SprayCan, label: "PERFUMES" },
+];
+
+export default function BrandPanel() {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-l-2xl bg-gradient-to-br from-[#1a0a10] via-[#2a0a14] to-[#3d0a1a]">
+      <div
+        className="absolute inset-0 opacity-60 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1600&q=80')",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/30" />
+
+      <AnimatedBackground />
+
+      <div className="relative h-full flex flex-col justify-between p-10 lg:p-14 text-white">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <LuxuryLogo size="md" />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="max-w-md"
+        >
+          <h2 className="elevate-title font-serif text-6xl lg:text-7xl font-black leading-none uppercase tracking-wide">
+            Elevate
+          </h2>
+          <p className="script-text text-4xl lg:text-5xl -mt-2 mb-6">
+            Every Moment
+          </p>
+          <div className="w-16 h-[3px] bg-[#C9A14A] mb-6" />
+          <p className="text-white/85 text-[15px] leading-relaxed max-w-sm">
+            Premium watches. Signature fragrances. Timeless wallets. Crafted for
+            those who value style, quality, and authenticity.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="flex gap-8"
+        >
+          {categories.map(({ icon: Icon, label }) => (
+            <div key={label} className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-full border border-[#C9A14A]/60 flex items-center justify-center">
+                <Icon className="w-6 h-6 text-[#C9A14A]" strokeWidth={1.5} />
+              </div>
+              <span className="text-[10px] tracking-[0.2em] text-white/80">
+                {label}
+              </span>
+              <div className="w-6 h-0.5 bg-[#C9A14A]" />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/auth/InputField.js">
+"use client";
+
+import { forwardRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+
+const InputField = forwardRef(function InputField(
+  { label, icon: Icon, type = "text", error, isPassword, ...props },
+  ref,
+) {
+  const [visible, setVisible] = useState(false);
+  const inputType = isPassword ? (visible ? "text" : "password") : type;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-[11px] font-semibold tracking-[0.15em] text-neutral-800 uppercase">
+        {label}
+      </label>
+      <div
+        className={`input-focus flex items-center gap-3 px-4 h-[52px] rounded-2xl border transition-all ${
+          error
+            ? "border-red-400 bg-red-50/40"
+            : "border-neutral-200 bg-white hover:border-neutral-300"
+        }`}
+      >
+        {Icon && (
+          <Icon
+            className="w-[18px] h-[18px] text-neutral-400 shrink-0"
+            strokeWidth={1.8}
+          />
+        )}
+        <input
+          ref={ref}
+          type={inputType}
+          className="flex-1 bg-transparent outline-none text-[15px] text-neutral-900 placeholder:text-neutral-400"
+          {...props}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            className="text-neutral-400 hover:text-neutral-700 transition-colors"
+            tabIndex={-1}
+          >
+            {visible ? (
+              <EyeOff className="w-[18px] h-[18px]" strokeWidth={1.8} />
+            ) : (
+              <Eye className="w-[18px] h-[18px]" strokeWidth={1.8} />
+            )}
+          </button>
+        )}
+      </div>
+      {error && <p className="text-xs text-red-500 pl-1">{error}</p>}
+    </div>
+  );
+});
+
+export default InputField;
+</file>
+
+<file path="components/features/auth/LoadingSpinner.js">
+"use client";
+
+import { Loader2 } from "lucide-react";
+
+export default function LoadingSpinner({ className = "w-4 h-4" }) {
+  return <Loader2 className={`${className} animate-spin`} />;
+}
+</file>
+
+<file path="components/features/auth/LuxuryLogo.js">
+"use client";
+
+import { motion } from "framer-motion";
+import { Watch } from "lucide-react";
+
+export default function LuxuryLogo({ size = "md" }) {
+  const sizes = {
+    sm: {
+      ring: "w-10 h-10",
+      icon: "w-5 h-5",
+      title: "text-xl",
+      sub: "text-[9px]",
+    },
+    md: {
+      ring: "w-14 h-14",
+      icon: "w-7 h-7",
+      title: "text-3xl",
+      sub: "text-[10px]",
+    },
+    lg: {
+      ring: "w-20 h-20",
+      icon: "w-10 h-10",
+      title: "text-4xl",
+      sub: "text-xs",
+    },
+  };
+  const s = sizes[size];
+
+  return (
+    <div className="flex items-center gap-4">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+        className={`${s.ring} rounded-full border-2 border-[#C9A14A] flex items-center justify-center`}
+      >
+        <Watch className={`${s.icon} text-[#C9A14A]`} strokeWidth={1.5} />
+      </motion.div>
+      <div>
+        <h1
+          className={`font-serif ${s.title} font-bold tracking-[0.15em] text-white`}
+        >
+          TIME AURA
+        </h1>
+        <p className={`${s.sub} tracking-[0.25em] text-white/70 mt-1`}>
+          TIMELESS STYLE. PRECISION YOU TRUST.
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/auth/PageTransition.js">
+
+</file>
+
+<file path="components/features/auth/PasswordInput.js">
+"use client";
+
+import { forwardRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+
+const PasswordInput = forwardRef(function PasswordInput(
+  { className, ...props },
+  ref,
+) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        ref={ref}
+        type={visible ? "text" : "password"}
+        className={cn("pr-10", className)}
+        {...props}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors"
+        tabIndex={-1}
+        aria-label={visible ? "Hide password" : "Show password"}
+      >
+        {visible ? (
+          <EyeOff className="w-[18px] h-[18px]" strokeWidth={1.8} />
+        ) : (
+          <Eye className="w-[18px] h-[18px]" strokeWidth={1.8} />
+        )}
+      </button>
+    </div>
+  );
+});
+
+export default PasswordInput;
+</file>
+
+<file path="components/features/PageTransition.js">
+"use client";
+
+import { motion } from "framer-motion";
+
+export default function PageTransition({ children }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+</file>
+
+<file path="components/ui/button.jsx">
+import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { cva } from "class-variance-authority";
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "group/button inline-flex shrink-0 items-center justify-center rounded-4xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        outline:
+          "border-border bg-input/30 hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        ghost:
+          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+        destructive:
+          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default:
+          "h-9 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
+        xs: "h-6 gap-1 px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 gap-1 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        lg: "h-10 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        icon: "size-9",
+        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-8",
+        "icon-lg": "size-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  ...props
+}) {
+  return (
+    <ButtonPrimitive
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props} />
+  );
+}
+
+export { Button, buttonVariants }
+</file>
+
+<file path="components/ui/checkbox.jsx">
+"use client"
+
+import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
+
+import { cn } from "@/lib/utils"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Tick02Icon } from "@hugeicons/core-free-icons"
+
+function Checkbox({
+  className,
+  ...props
+}) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[6px] border border-input transition-shadow outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
+        className
+      )}
+      {...props}>
+      <CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className="grid place-content-center text-current transition-none [&>svg]:size-3.5">
+        <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  );
+}
+
+export { Checkbox }
+</file>
+
+<file path="components/ui/input-otp.jsx">
+"use client"
+
+import * as React from "react"
+import { OTPInput, OTPInputContext } from "input-otp"
+
+import { cn } from "@/lib/utils"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { MinusSignIcon } from "@hugeicons/core-free-icons"
+
+function InputOTP({
+  className,
+  containerClassName,
+  ...props
+}) {
+  return (
+    <OTPInput
+      data-slot="input-otp"
+      containerClassName={cn(
+        "cn-input-otp flex items-center has-disabled:opacity-50",
+        containerClassName
+      )}
+      spellCheck={false}
+      className={cn("disabled:cursor-not-allowed", className)}
+      {...props} />
+  );
+}
+
+function InputOTPGroup({
+  className,
+  ...props
+}) {
+  return (
+    <div
+      data-slot="input-otp-group"
+      className={cn(
+        "flex items-center rounded-4xl has-aria-invalid:border-destructive has-aria-invalid:ring-[3px] has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props} />
+  );
+}
+
+function InputOTPSlot({
+  index,
+  className,
+  ...props
+}) {
+  const inputOTPContext = React.useContext(OTPInputContext)
+  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
+
+  return (
+    <div
+      data-slot="input-otp-slot"
+      data-active={isActive}
+      className={cn(
+        "relative flex size-9 items-center justify-center border-y border-r border-input bg-input/30 text-sm transition-all outline-none first:rounded-l-4xl first:border-l last:rounded-r-4xl aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-[3px] data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}>
+      {char}
+      {hasFakeCaret && (
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InputOTPSeparator({
+  ...props
+}) {
+  return (
+    <div
+      data-slot="input-otp-separator"
+      className="flex items-center [&_svg:not([class*='size-'])]:size-4"
+      role="separator"
+      {...props}>
+      <HugeiconsIcon icon={MinusSignIcon} strokeWidth={2} />
+    </div>
+  );
+}
+
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }
+</file>
+
+<file path="components/ui/input.jsx">
+import * as React from "react"
+import { Input as InputPrimitive } from "@base-ui/react/input"
+
+import { cn } from "@/lib/utils"
+
+function Input({
+  className,
+  type,
+  ...props
+}) {
+  return (
+    <InputPrimitive
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-9 w-full min-w-0 rounded-4xl border border-input bg-input/30 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props} />
+  );
+}
+
+export { Input }
+</file>
+
+<file path="components/ui/label.jsx">
+"use client"
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Label({
+  className,
+  ...props
+}) {
+  return (
+    <label
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props} />
+  );
+}
+
+export { Label }
+</file>
+
+<file path="components/ui/sonner.jsx">
+"use client"
+
+import { useTheme } from "next-themes"
+import { Toaster as Sonner } from "sonner";
+import { HugeiconsIcon } from "@hugeicons/react"
+import { CheckmarkCircle02Icon, InformationCircleIcon, Alert02Icon, MultiplicationSignCircleIcon, Loading03Icon } from "@hugeicons/core-free-icons"
+
+const Toaster = ({
+  ...props
+}) => {
+  const { theme = "system" } = useTheme()
+
+  return (
+    <Sonner
+      theme={theme}
+      className="toaster group"
+      icons={{
+        success: (
+          <HugeiconsIcon icon={CheckmarkCircle02Icon} strokeWidth={2} className="size-4" />
+        ),
+        info: (
+          <HugeiconsIcon icon={InformationCircleIcon} strokeWidth={2} className="size-4" />
+        ),
+        warning: (
+          <HugeiconsIcon icon={Alert02Icon} strokeWidth={2} className="size-4" />
+        ),
+        error: (
+          <HugeiconsIcon icon={MultiplicationSignCircleIcon} strokeWidth={2} className="size-4" />
+        ),
+        loading: (
+          <HugeiconsIcon icon={Loading03Icon} strokeWidth={2} className="size-4 animate-spin" />
+        ),
+      }}
+      style={
+        {
+          "--normal-bg": "var(--popover)",
+          "--normal-text": "var(--popover-foreground)",
+          "--normal-border": "var(--border)",
+          "--border-radius": "var(--radius)"
+        }
+      }
+      toastOptions={{
+        classNames: {
+          toast: "cn-toast",
+        },
+      }}
+      {...props} />
+  );
+}
+
+export { Toaster }
+</file>
+
+<file path="components/ui/Toast.js">
+"use client";
+
+import { createContext, useCallback, useContext, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, XCircle } from "lucide-react";
+
+const ToastContext = createContext(null);
+
+export function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+
+  const push = useCallback((toast) => {
+    const id = Date.now() + Math.random();
+    setToasts((t) => [...t, { id, ...toast }]);
+    setTimeout(() => {
+      setToasts((t) => t.filter((x) => x.id !== id));
+    }, 4000);
+  }, []);
+
+  const api = {
+    success: (message) => push({ type: "success", message }),
+    error: (message) => push({ type: "error", message }),
+  };
+
+  return (
+    <ToastContext.Provider value={api}>
+      {children}
+      <div className="fixed top-6 right-6 z-100 flex flex-col gap-3">
+        <AnimatePresence>
+          {toasts.map((t) => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 60 }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg min-w-70 max-w-sm ${
+                t.type === "success"
+                  ? "bg-white border border-emerald-200"
+                  : "bg-white border border-red-200"
+              }`}
+            >
+              {t.type === "success" ? (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              ) : (
+                <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+              )}
+              <p className="text-sm text-neutral-800">{t.message}</p>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToast must be used inside ToastProvider");
+  return ctx;
+}
+</file>
+
+<file path="lib/api.js">
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
+async function request(path, { method = "GET", body, headers = {} } = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const error = new Error(data?.message || "Something went wrong");
+    error.status = res.status;
+    error.details = data?.details;
+    throw error;
+  }
+
+  return data;
+}
+
+export const authApi = {
+  // POST /api/v1/auth/register  body: { name, email, password }
+  register: ({ name, email, password }) =>
+    request("/auth/register", {
+      method: "POST",
+      body: { name, email, password },
+    }),
+
+  // POST /api/v1/auth/login  body: { email, password }
+  login: ({ email, password }) =>
+    request("/auth/login", {
+      method: "POST",
+      body: { email, password },
+    }),
+
+  // POST /api/v1/auth/verify-email  body: { email, code }
+  verifyEmail: ({ email, code }) =>
+    request("/auth/verify-email", {
+      method: "POST",
+      body: { email, code },
+    }),
+};
+</file>
+
+<file path="lib/utils.js">
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+</file>
+
+<file path="lib/validations.js">
+import { z } from "zod";
+
+export const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, "Name must be at least 2 characters")
+      .max(100, "Name must be at most 100 characters"),
+    email: z.string().email("Please enter a valid email"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+    terms: z.literal(true, {
+      errorMap: () => ({ message: "You must accept the Terms of Service" }),
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const verifyEmailSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+});
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path=".dockerignore">
+node_modules
+.next
+.git
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="AGENTS.md">
+Project uses:
+
+Node.js
+
+Express
+
+Prisma
+
+Repository Pattern
+
+Never place database queries in controllers.
+
+Always validate using Zod.
+
+Controllers must stay thin.
+
+Business logic belongs in services.
+
+Prisma belongs in repositories.
+
+Money stored as integers.
+
+Do not introduce Redux.
+
+Prefer React Context.
+
+Follow existing folder structure.
+
+Use Docker for local development.
+
+Do not modify generated Prisma files.
+
+Never hardcode secrets.
+</file>
+
+<file path="CLAUDE.md">
+@AGENTS.md
+You are working on TimeAura.
+
+Always preserve architecture.
+
+Never refactor entire folders unless requested.
+
+Follow existing naming conventions.
+
+Prefer readability over cleverness.
+
+Never duplicate logic.
+
+Keep controllers thin.
+
+Keep services reusable.
+
+Never change Prisma schema without migrations.
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-maia",
+  "rsc": true,
+  "tsx": false,
+  "tailwind": {
+    "config": "",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "hugeicons",
+  "rtl": false,
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}
+</file>
+
+<file path="Dockerfile">
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+CMD ["npm", "run", "dev"]
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="jsconfig.json">
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
+</file>
+
+<file path="next.config.mjs">
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+</file>
+
+<file path="package.json">
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.6.0",
+    "@hookform/resolvers": "^5.4.0",
+    "@hugeicons/core-free-icons": "^4.2.2",
+    "@hugeicons/react": "^1.1.9",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.42.2",
+    "input-otp": "^1.4.2",
+    "lucide-react": "^1.24.0",
+    "next": "^16.2.10",
+    "next-themes": "^0.4.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.81.0",
+    "shadcn": "^4.13.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.6.0",
+    "three": "^0.185.1",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "^4"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
+  }
+}
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="README.md">
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+App Router
+
+Folder Structure
+
+Components
+
+Layouts
+
+Auth
+
+API Calls
+
+Middleware
+
+Protected Routes
+</file>
+
+</files>
