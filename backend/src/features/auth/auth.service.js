@@ -2,6 +2,7 @@ const authRepository = require("./auth.repository");
 const { hash, compare } = require("../../shared/utils/password");
 const { generateOtp, hashOtp, compareOtp } = require("../../shared/utils/otp");
 const { sendMail } = require("../../shared/utils/mailer");
+const { verifyGoogleIdToken } = require("../../shared/utils/googleAuth");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -153,6 +154,37 @@ class AuthService {
     };
   }
 
+  async googleLogin({ idToken }) {
+    const { googleId, email, emailVerified, name } =
+      await verifyGoogleIdToken(idToken);
+
+    if (!emailVerified) {
+      throw new UnauthorizedError("Google account email is not verified");
+    }
+
+    let user = await authRepository.findByGoogleId(googleId);
+
+    if (!user) {
+      user = await authRepository.findByEmail(email);
+
+      if (user) {
+        // Same email already registered locally — link accounts rather than
+        // creating a duplicate. Avoids a confusing "email already exists" dead end.
+        user = await authRepository.linkGoogleId(user.id, googleId);
+      } else {
+        user = await authRepository.createGoogleUser({
+          name,
+          email,
+          googleId,
+          role: roles.STAFF,
+        });
+      }
+    }
+
+    const tokens = issueTokens(user);
+    return { user: toSafeUser(user), ...tokens };
+  }
+
   async verifyEmail({ email, code }) {
     const user = await authRepository.findByEmail(email);
     if (!user) {
@@ -182,11 +214,25 @@ class AuthService {
     };
   }
 
+  async googleLogin(req, res) {
+    const { user, accessToken, refreshToken } = await authService.googleLogin(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, { message: "Logged in", data: { user, accessToken } });
+  }
+
   async login({ email, password }) {
     const user = await authRepository.findByEmail(email);
 
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
+    }
+
+    if (!user.passwordHash) {
+      throw new UnauthorizedError(
+        "This account uses Google sign-in. Please continue with Google.",
+      );
     }
 
     const passwordMatches = await compare(password, user.passwordHash);

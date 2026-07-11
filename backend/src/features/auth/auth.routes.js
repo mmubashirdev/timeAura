@@ -3,6 +3,7 @@ const authController = require("./auth.controller");
 const validateRequest = require("../../shared/middlewares/validateRequest");
 const asyncHandler = require("../../shared/utils/asyncHandler");
 const authGuard = require("../../shared/middlewares/authGuard");
+
 const {
   authLimiter,
   otpRequestLimiter,
@@ -13,6 +14,7 @@ const {
   emailOnlySchema,
   verifyEmailSchema,
   resetPasswordSchema,
+  googleLoginSchema,
 } = require("./auth.validation");
 
 const router = express.Router();
@@ -23,6 +25,14 @@ router.post(
   validateRequest(registerSchema),
   asyncHandler(authController.register),
 );
+
+router.post(
+  "/google",
+  authLimiter,
+  validateRequest(googleLoginSchema),
+  asyncHandler(authController.googleLogin),
+);
+
 router.post(
   "/verify-email",
   authLimiter,

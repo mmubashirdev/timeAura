@@ -71,6 +71,31 @@ class AuthRepository {
       data: { consumedAt: new Date() },
     });
   }
+
+  findByGoogleId(googleId) {
+    return prisma.user.findUnique({ where: { googleId } });
+  }
+
+  createGoogleUser({ name, email, googleId, role }) {
+    return prisma.user.create({
+      data: {
+        name,
+        email,
+        googleId,
+        role,
+        isEmailVerified: true, // Google has already verified this email for us
+      },
+    });
+  }
+
+  linkGoogleId(userId, googleId) {
+    // Existing local-password account signing in with Google for the first time
+    return prisma.user.update({
+      where: { id: userId },
+      data: { googleId, isEmailVerified: true },
+    });
+  }
+  
 }
 
 module.exports = new AuthRepository();
