@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Aura Color Palette */
+  --color-aura-black: #0D0705;
+  --color-aura-maroon: #3B0A0A;
+  --color-aura-maroonDeep: #4A0E0E;
+  --color-aura-gold: #C9973E;
+  --color-aura-amber: #D9822B;
+  --color-aura-cream: #F7F3EA;
+  --color-aura-creamCard: #FBF8F2;
+  --color-aura-grayText: #8A8178;
+
+  /* Font Families (bound to next/font variables from layout.tsx) */
+  --font-cinzel: var(--font-cinzel);
+  --font-anton: var(--font-anton);
+  --font-dancing: var(--font-dancing);
+  --font-sans: var(--font-montserrat);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #F7F3EA;
 }
