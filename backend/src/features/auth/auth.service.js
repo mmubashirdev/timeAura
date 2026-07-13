@@ -214,14 +214,6 @@ class AuthService {
     };
   }
 
-  async googleLogin(req, res) {
-    const { user, accessToken, refreshToken } = await authService.googleLogin(
-      req.body,
-    );
-    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
-    sendResponse(res, { message: "Logged in", data: { user, accessToken } });
-  }
-
   async login({ email, password }) {
     const user = await authRepository.findByEmail(email);
 

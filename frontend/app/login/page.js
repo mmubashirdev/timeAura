@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -17,11 +16,11 @@ import AuthDivider from "@/components/features/auth/AuthDivider";
 import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
 
 import { loginSchema } from "@/lib/validations";
-import { authApi } from "@/lib/api";
+import { useLogin } from "@/hooks/useAuth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const loginMutation = useLogin();
 
   const {
     register,
@@ -33,54 +32,45 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async (values) => {
-    setSubmitting(true);
-    try {
-      // Contract: POST /auth/login  body: { email, password }
-      const res = await authApi.login({
-        email: values.email,
-        password: values.password,
-      });
-
-      // Backend returns { data: { user, accessToken } } and sets refreshToken cookie
-      if (res?.data?.accessToken) {
-        localStorage.setItem("accessToken", res.data.accessToken);
-      }
-
-      toast.success("Welcome back", {
-        description: "You're signed in.",
-      });
-      router.push("/");
-    } catch (err) {
-      toast.error("Sign in failed", {
-        description:
-          err.message || "Please check your credentials and try again.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+  const onSubmit = (values) => {
+    // Contract: POST /auth/login  body: { email, password }
+    loginMutation.mutate(
+      { email: values.email, password: values.password },
+      {
+        onSuccess: (res) => {
+          if (res?.data?.accessToken) {
+            localStorage.setItem("accessToken", res.data.accessToken);
+          }
+          toast.success("Welcome back", { description: "You're signed in." });
+          router.push("/");
+        },
+        onError: (err) => {
+          toast.error("Sign in failed", {
+            description: err.message || "Please check your credentials.",
+          });
+        },
+      },
+    );
   };
 
   return (
     <AuthLayout>
-      {/* Heading */}
-      <header className="mb-8">
-        <h1 className="font-serif text-3xl lg:text-4xl font-bold text-[#5c0016] tracking-wide uppercase">
+      <header className="mb-5">
+        <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
           Welcome Back
         </h1>
         <div
-          className="w-14 h-[3px] bg-[#C9A14A] mt-3 mb-4"
+          className="w-12 h-[3px] bg-[#C9A14A] mt-2 mb-3"
           aria-hidden="true"
         />
-        <p className="text-neutral-600 text-[15px]">
+        <p className="text-neutral-600 text-sm">
           Sign in to continue your Time Aura experience.
         </p>
       </header>
 
-      {/* Form */}
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         noValidate
       >
         <FormField
@@ -94,24 +84,24 @@ export default function LoginPage() {
           {...register("email")}
         />
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor="password"
-              className="text-[11px] font-semibold tracking-[0.15em] uppercase text-neutral-800"
+              className="text-[10px] font-semibold tracking-[0.15em] uppercase text-neutral-800"
             >
               Password
             </label>
             <Link
               href="/forgot-password"
-              className="text-xs text-[#C9A14A] font-medium hover:underline"
+              className="text-[11px] text-[#C9A14A] font-medium hover:underline"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
             <Lock
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400 z-10 pointer-events-none"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none"
               strokeWidth={1.8}
               aria-hidden="true"
             />
@@ -119,18 +109,13 @@ export default function LoginPage() {
               id="password"
               autoComplete="current-password"
               placeholder="Enter your password"
-              className="h-[46px] pl-10 rounded-2xl"
+              className="pl-9"
               aria-invalid={!!errors.password}
-              aria-describedby={errors.password ? "password-error" : undefined}
               {...register("password")}
             />
           </div>
           {errors.password && (
-            <p
-              id="password-error"
-              role="alert"
-              className="text-xs text-destructive pl-1"
-            >
+            <p role="alert" className="text-[11px] text-destructive pl-1">
               {errors.password.message}
             </p>
           )}
@@ -138,10 +123,10 @@ export default function LoginPage() {
 
         <Button
           type="submit"
-          disabled={submitting}
-          className="mt-2 h-[48px] rounded-2xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-sm uppercase shadow-lg shadow-[#5c0016]/20"
+          disabled={loginMutation.isPending}
+          className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
         >
-          {submitting ? (
+          {loginMutation.isPending ? (
             <span className="flex items-center gap-2">
               <LoadingSpinner /> Signing In...
             </span>
@@ -154,7 +139,7 @@ export default function LoginPage() {
 
         <GoogleButton />
 
-        <p className="text-center text-sm text-neutral-600 mt-4">
+        <p className="text-center text-xs text-neutral-600 mt-3">
           Don&apos;t have an account?{" "}
           <Link
             href="/signup"

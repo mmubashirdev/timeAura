@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
@@ -20,11 +19,11 @@ import AuthDivider from "@/components/features/auth/AuthDivider";
 import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
 
 import { registerSchema } from "@/lib/validations";
-import { authApi } from "@/lib/api";
+import { useRegister } from "@/hooks/useAuth";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const registerMutation = useRegister();
 
   const {
     register,
@@ -43,44 +42,43 @@ export default function SignupPage() {
     },
   });
 
-  const onSubmit = async (values) => {
-    setSubmitting(true);
-    try {
-      // Contract: POST /auth/register  body: { name, email, password }
-      await authApi.register({
-        name: values.name,
-        email: values.email,
-        password: values.password,
-      });
-
-      toast.success("Account created", {
-        description: "Check your email for the 6-digit verification code.",
-      });
-      router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
-    } catch (err) {
-      toast.error("Registration failed", {
-        description: err.message || "Please try again.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+  const onSubmit = (values) => {
+    // Contract: POST /auth/register  body: { name, email, password }
+    registerMutation.mutate(
+      { name: values.name, email: values.email, password: values.password },
+      {
+        onSuccess: () => {
+          toast.success("Account created", {
+            description: "Check your email for the 6-digit verification code.",
+          });
+          router.push(
+            `/verify-email?email=${encodeURIComponent(values.email)}`,
+          );
+        },
+        onError: (err) => {
+          toast.error("Registration failed", {
+            description: err.message || "Please try again.",
+          });
+        },
+      },
+    );
   };
 
   return (
     <AuthLayout>
-      <header className="mb-6">
-        <h1 className="font-serif text-2xl lg:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
+      <header className="mb-3 mt-5">
+        <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
           Create Your Account
         </h1>
         <div
-          className="w-14 h-0.75 bg-[#C9A14A] mt-3 mb-4"
+          className="w-12 h-[3px] bg-[#C9A14A] mt-2 mb-2"
           aria-hidden="true"
         />
       </header>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-3"
         noValidate
       >
         <FormField
@@ -110,11 +108,11 @@ export default function SignupPage() {
           icon={Lock}
           error={errors.password?.message}
         >
-            <PasswordInput
+          <PasswordInput
             id="password"
             autoComplete="new-password"
             placeholder="Create a password"
-            className="h-[46px] pl-10 rounded-2xl"
+            className="pl-9"
             aria-invalid={!!errors.password}
             {...register("password")}
           />
@@ -126,18 +124,18 @@ export default function SignupPage() {
           icon={Lock}
           error={errors.confirmPassword?.message}
         >
-            <PasswordInput
+          <PasswordInput
             id="confirmPassword"
             autoComplete="new-password"
             placeholder="Confirm your password"
-            className="h-[46px] pl-10 rounded-2xl"
+            className="pl-9"
             aria-invalid={!!errors.confirmPassword}
             {...register("confirmPassword")}
           />
         </FormField>
 
-        <div className="pt-1">
-          <div className="flex items-start gap-3">
+        <div className="pt-0.5">
+          <div className="flex items-start gap-2.5">
             <Controller
               name="terms"
               control={control}
@@ -152,26 +150,33 @@ export default function SignupPage() {
             />
             <Label
               htmlFor="terms"
-              className="text-sm text-neutral-700 leading-relaxed font-normal"
+              className="text-xs text-neutral-700 leading-relaxed font-normal"
             >
               I agree to the{" "}
-              <a
-                href="#"
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-[#C9A14A] font-medium hover:underline"
               >
                 Terms of Service
-              </a>{" "}
+              </Link>{" "}
               and{" "}
-              <a
-                href="#"
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-[#C9A14A] font-medium hover:underline"
               >
                 Privacy Policy
-              </a>
+              </Link>
             </Label>
           </div>
           {errors.terms && (
-            <p role="alert" className="text-xs text-destructive pl-8 mt-1">
+            <p
+              role="alert"
+              className="text-[11px] text-destructive pl-7 mt-0.5"
+            >
               {errors.terms.message}
             </p>
           )}
@@ -179,10 +184,10 @@ export default function SignupPage() {
 
         <Button
           type="submit"
-          disabled={submitting}
-          className="mt-2 h-[48px] rounded-2xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-sm uppercase shadow-lg shadow-[#5c0016]/20"
+          disabled={registerMutation.isPending}
+          className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
         >
-          {submitting ? (
+          {registerMutation.isPending ? (
             <span className="flex items-center gap-2">
               <LoadingSpinner /> Creating Account...
             </span>
@@ -195,7 +200,7 @@ export default function SignupPage() {
 
         <GoogleButton />
 
-        <p className="text-center text-sm text-neutral-600 mt-4">
+        <p className="text-center text-xs text-neutral-600 mt-2">
           Already have an account?{" "}
           <Link
             href="/login"

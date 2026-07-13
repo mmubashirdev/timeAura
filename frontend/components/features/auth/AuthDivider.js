@@ -1,7 +1,7 @@
 export default function AuthDivider({ label = "OR" }) {
   return (
     <div
-      className="flex items-center gap-4 my-2"
+      className="flex items-center gap-4"
       role="separator"
       aria-label={label}
     >
