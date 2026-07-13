@@ -29,11 +29,19 @@ class AuthController {
     sendResponse(res, { message: "Logged in", data: { user, accessToken } });
   }
 
+  async googleLogin(req, res) {
+    const { user, accessToken, refreshToken } = await authService.googleLogin(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, { message: "Logged in", data: { user, accessToken } });
+  }
+
   async me(req, res) {
     const user = await authService.getById(req.user.sub);
     sendResponse(res, { message: "OK", data: { user } });
   }
-  
+
   async refresh(req, res) {
     const { user, accessToken, refreshToken } = await authService.refresh(
       req.cookies.refreshToken,

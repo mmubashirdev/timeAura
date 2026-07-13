@@ -15,6 +15,11 @@ const emailOnlySchema = z.object({
   email: z.string().email(),
 });
 
+
+const googleLoginSchema = z.object({
+  idToken: z.string().min(1, "idToken is required"),
+});
+
 const verifyEmailSchema = z.object({
   email: z.string().email(),
   code: z.string().length(6, "Code must be 6 digits"),
@@ -32,4 +37,5 @@ module.exports = {
   emailOnlySchema,
   verifyEmailSchema,
   resetPasswordSchema,
+  googleLoginSchema,
 };

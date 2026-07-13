@@ -1,5 +1,6 @@
 const { z } = require("zod");
 
+// config/env.js
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -18,6 +19,7 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default("'Time Aura' <${env.SMTP_USER}>"),
   OTP_TTL_MINUTES: z.string().default("10"),
   OTP_MAX_ATTEMPTS: z.string().default("5"),
+  GOOGLE_CLIENT_ID: z.string().min(1), // Web client ID from Google Cloud Console
 });
 const parsed = envSchema.safeParse(process.env);
 

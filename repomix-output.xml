@@ -1,10 +1,10 @@
-This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
 
 <file_summary>
 This section contains a summary of this file.
 
 <purpose>
-This file contains a packed representation of the entire repository's contents.
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 </purpose>
@@ -32,6 +32,7 @@ The content is organized as follows:
 <notes>
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: node_modules, dist, .next
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
@@ -48,6 +49,8 @@ backend/
     migrations/
       20260710120611_add_otp_and_email_verification/
         migration.sql
+      20260710204502_google_outh/
+        migration.sql
       migration_lock.toml
     schema.prisma
   src/
@@ -56,14 +59,8 @@ backend/
         auth.controller.js
         auth.repository.js
         auth.routes.js
-        auth.schema.js
         auth.service.js
         auth.validation.js
-        auth.validators.js
-    middlewares/
-      auth.middleware.js
-    routes/
-      index.js
     shared/
       constants/
         httpStatus.js
@@ -75,10 +72,10 @@ backend/
         errorHandler.js
         rateLimiter.js
         validateRequest.js
-      prisma/
-        client.js
       utils/
         asyncHandler.js
+        emailTemplate.js
+        googleAuth.js
         jwt.js
         mailer.js
         otp.js
@@ -87,6 +84,7 @@ backend/
     app.js
     server.js
   .gitignore
+  cookies.txt
   Dockerfile
   jsconfig.json
   package.json
@@ -127,6 +125,58 @@ README.md
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="backend/prisma/migrations/20260710204502_google_outh/migration.sql">
+/*
+  Warnings:
+
+  - A unique constraint covering the columns `[googleId]` on the table `User` will be added. If there are existing duplicate values, this will fail.
+
+*/
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "googleId" TEXT,
+ALTER COLUMN "passwordHash" DROP NOT NULL;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId");
+</file>
+
+<file path="backend/src/shared/utils/googleAuth.js">
+// src/shared/utils/googleAuth.js
+const { OAuth2Client } = require("google-auth-library");
+const env = require("../../../config/env");
+const { UnauthorizedError } = require("../errors/AppError");
+
+const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+
+// Verifies the token's signature, audience, issuer, and expiry against
+// Google's public keys — never trust a client-supplied payload without this.
+async function verifyGoogleIdToken(idToken) {
+  let ticket;
+  try {
+    ticket = await client.verifyIdToken({
+      idToken,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+  } catch {
+    throw new UnauthorizedError("Invalid Google token");
+  }
+
+  const payload = ticket.getPayload();
+  if (!payload) {
+    throw new UnauthorizedError("Invalid Google token");
+  }
+
+  return {
+    googleId: payload.sub,
+    email: payload.email,
+    emailVerified: payload.email_verified,
+    name: payload.name,
+  };
+}
+
+module.exports = { verifyGoogleIdToken };
+</file>
 
 <file path="backend/prisma/migrations/20260710120611_add_otp_and_email_verification/migration.sql">
 -- CreateEnum
@@ -338,6 +388,11 @@ const emailOnlySchema = z.object({
   email: z.string().email(),
 });
 
+
+const googleLoginSchema = z.object({
+  idToken: z.string().min(1, "idToken is required"),
+});
+
 const verifyEmailSchema = z.object({
   email: z.string().email(),
   code: z.string().length(6, "Code must be 6 digits"),
@@ -355,6 +410,20 @@ module.exports = {
   emailOnlySchema,
   verifyEmailSchema,
   resetPasswordSchema,
+  googleLoginSchema,
+};
+</file>
+
+<file path="backend/src/shared/constants/httpStatus.js">
+module.exports = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  INTERNAL_SERVER_ERROR: 500,
 };
 </file>
 
@@ -362,6 +431,57 @@ module.exports = {
 module.exports = {
   ADMIN: "ADMIN",
   STAFF: "STAFF",
+};
+</file>
+
+<file path="backend/src/shared/errors/AppError.js">
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = true; // distinguishes "expected" errors from bugs
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(message, details = null) {
+    super(message, 400);
+    this.details = details;
+  }
+}
+
+class UnauthorizedError extends AppError {
+  constructor(message = "Unauthorized") {
+    super(message, 401);
+  }
+}
+
+class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super(message, 403);
+  }
+}
+
+class NotFoundError extends AppError {
+  constructor(message = "Resource not found") {
+    super(message, 404);
+  }
+}
+
+class ConflictError extends AppError {
+  constructor(message = "Conflict") {
+    super(message, 409);
+  }
+}
+
+module.exports = {
+  AppError,
+  ValidationError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
 };
 </file>
 
@@ -465,6 +585,128 @@ const validateRequest = (schema) => (req, res, next) => {
 module.exports = validateRequest;
 </file>
 
+<file path="backend/src/shared/utils/asyncHandler.js">
+// Wraps every controller so a rejected promise or thrown error
+// is forwarded to Express's error pipeline instead of crashing the process.
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+module.exports = asyncHandler;
+</file>
+
+<file path="backend/src/shared/utils/emailTemplate.js">
+const env = require("../../../config/env");
+
+function otpTemplate({ title, heading, message, code, footer }) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+</head>
+
+<body style="margin:0;padding:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fafafa;padding:40px 20px;">
+<tr>
+<td align="center">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(128,0,32,0.08);">
+
+<!-- Header -->
+<tr>
+<td style="background:linear-gradient(135deg, #800020 0%, #5c0016 100%);padding:48px 40px;text-align:center;">
+<h1 style="margin:0;color:#ffffff;font-size:28px;letter-spacing:2px;font-weight:700;text-transform:uppercase;">Time Aura</h1>
+<p style="margin:12px 0 0 0;color:#f0d9e0;font-size:14px;letter-spacing:0.5px;">Luxury Watches • Wallets • Perfumes</p>
+</td>
+</tr>
+
+<!-- Content -->
+<tr>
+<td style="padding:48px 40px;">
+
+<h2 style="margin:0 0 20px 0;font-size:24px;color:#1a1a1a;font-weight:600;">${heading}</h2>
+
+<p style="font-size:15px;line-height:24px;color:#4a4a4a;margin:0 0 32px 0;">${message}</p>
+
+<!-- OTP Code -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center" style="padding:32px 0;">
+<table cellpadding="0" cellspacing="0" border="0" style="background:#f8f4f5;border:2px dashed #800020;border-radius:12px;padding:24px 40px;">
+<tr>
+<td align="center">
+<div style="font-size:36px;font-weight:700;color:#800020;letter-spacing:8px;font-family:'Courier New',monospace;">${code}</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+<p style="text-align:center;font-size:13px;color:#666666;margin:0 0 32px 0;">Valid for <strong>${env.OTP_TTL_MINUTES} minutes</strong></p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7f9;border-left:4px solid #800020;border-radius:8px;padding:16px 20px;margin-bottom:32px;">
+<tr>
+<td>
+<p style="margin:0;font-size:13px;color:#666666;line-height:20px;">${footer}</p>
+</td>
+</tr>
+</table>
+
+<p style="font-size:13px;color:#999999;line-height:20px;margin:0;">Questions? Contact our support team at <a href="mailto:timeaura.online@gmail.com" style="color:#800020;text-decoration:none;">timeaura.online@gmail.com</a></p>
+
+</td>
+</tr>
+
+<!-- Footer -->
+<tr>
+<td style="background:#1a1a1a;padding:32px 40px;text-align:center;">
+<p style="margin:0 0 8px 0;color:#ffffff;font-size:14px;font-weight:600;letter-spacing:1px;">TIME AURA</p>
+<p style="margin:0 0 16px 0;font-size:12px;color:#999999;">Timeless Style. Precision You Trust.</p>
+<p style="margin:0;font-size:11px;color:#666666;">© ${new Date().getFullYear()} Time Aura. All rights reserved.</p>
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+`;
+}
+
+// Plain text version for spam prevention
+function otpPlainText({ heading, message, code, footer }) {
+  return `
+${heading}
+
+${message}
+
+Your verification code: ${code}
+
+This code expires in ${env.OTP_TTL_MINUTES} minutes.
+
+${footer}
+
+---
+TIME AURA
+Timeless Style. Precision You Trust.
+
+Questions? Reply to this email.
+© ${new Date().getFullYear()} Time Aura. All rights reserved.
+`;
+}
+
+module.exports = { otpTemplate, otpPlainText };
+</file>
+
 <file path="backend/src/shared/utils/mailer.js">
 const nodemailer = require("nodemailer");
 const env = require("../../../config/env");
@@ -476,8 +718,15 @@ const transporter = nodemailer.createTransport({
   auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
 });
 
-async function sendMail({ to, subject, html }) {
-  return transporter.sendMail({ from: env.EMAIL_FROM, to, subject, html });
+async function sendMail({ to, subject, html, text }) {
+  return transporter.sendMail({
+    from: env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+    text,
+    // Helps some providers when clients show a plain-text fallback.
+  });
 }
 
 module.exports = { sendMail };
@@ -500,6 +749,39 @@ function compareOtp(code, hash) {
 }
 
 module.exports = { generateOtp, hashOtp, compareOtp };
+</file>
+
+<file path="backend/src/shared/utils/sendResponse.js">
+function sendResponse(
+  res,
+  { statusCode = 200, message = "Success", data = null },
+) {
+  return res.status(statusCode).json({ success: true, message, data });
+}
+
+module.exports = sendResponse;
+</file>
+
+<file path="backend/.gitignore">
+node_modules
+# Keep environment variables out of version control
+.env
+
+/src/generated/prisma
+</file>
+
+<file path="backend/cookies.txt">
+# Netscape HTTP Cookie File
+# https://curl.se/docs/http-cookies.html
+# This file was generated by libcurl! Edit at your own risk.
+</file>
+
+<file path="backend/jsconfig.json">
+{
+  "compilerOptions": {
+    "checkJs": false
+  }
+}
 </file>
 
 <file path="backend/README.md">
@@ -585,6 +867,10 @@ config/
   env.js
   prisma.js
 prisma/
+  migrations/
+    20260710120611_add_otp_and_email_verification/
+      migration.sql
+    migration_lock.toml
   schema.prisma
 src/
   features/
@@ -592,39 +878,36 @@ src/
       auth.controller.js
       auth.repository.js
       auth.routes.js
-      auth.schema.js
       auth.service.js
-      auth.validations.js
-      auth.validators.js
-  middlewares/
-    auth.middleware.js
-  routes/
-    index.js
+      auth.validation.js
   shared/
     constants/
       httpStatus.js
-      role.js
+      roles.js
     errors/
       AppError.js
-    middleware/
+    middlewares/
       authGuard.js
       errorHandler.js
       rateLimiter.js
       validateRequest.js
-    prisma/
-      client.js
     utils/
       asyncHandler.js
+      emailTemplate.js
       jwt.js
+      mailer.js
+      otp.js
       password.js
       sendResponse.js
   app.js
   server.js
 .gitignore
+cookies.txt
 Dockerfile
 jsconfig.json
 package.json
 prisma.config.ts
+README.md
 </directory_structure>
 
 <files>
@@ -639,17 +922,19 @@ const envSchema = z.object({
     .default("development"),
   PORT: z.string().default("5000"),
   DATABASE_URL: z.string().min(1),
-  ACCESS_TOKEN_SECRET: z
-    .string()
-    .min(32, "ACCESS_TOKEN_SECRET must be at least 32 chars"),
-  REFRESH_TOKEN_SECRET: z
-    .string()
-    .min(32, "REFRESH_TOKEN_SECRET must be at least 32 chars"),
+  ACCESS_TOKEN_SECRET: z.string().min(32),
+  REFRESH_TOKEN_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL: z.string().default("7d"),
   BCRYPT_SALT_ROUNDS: z.string().default("12"),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.string().default("587"),
+  SMTP_USER: z.string().min(1),
+  SMTP_PASS: z.string().min(1),
+  EMAIL_FROM: z.string().default("'Time Aura' <${env.SMTP_USER}>"),
+  OTP_TTL_MINUTES: z.string().default("10"),
+  OTP_MAX_ATTEMPTS: z.string().default("5"),
 });
-
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
@@ -662,7 +947,7 @@ module.exports = parsed.data;
 </file>
 
 <file path="config/prisma.js">
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require("../src/generated/prisma");
 const env = require("./env");
 
 const prisma = new PrismaClient({
@@ -675,6 +960,198 @@ const prisma = new PrismaClient({
 module.exports = prisma;
 </file>
 
+<file path="prisma/migrations/20260710120611_add_otp_and_email_verification/migration.sql">
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED');
+
+-- CreateEnum
+CREATE TYPE "PaymentMethod" AS ENUM ('COD', 'JAZZCASH', 'EASYPAISA', 'CARD');
+
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'STAFF');
+
+-- CreateEnum
+CREATE TYPE "OtpType" AS ENUM ('EMAIL_VERIFICATION', 'PASSWORD_RESET');
+
+-- CreateTable
+CREATE TABLE "Category" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Product" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "description" TEXT,
+    "categoryId" INTEGER NOT NULL,
+    "basePrice" INTEGER NOT NULL,
+    "compareAtPrice" INTEGER,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductImage" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "url" TEXT NOT NULL,
+    "altText" TEXT,
+    "position" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductVariant" (
+    "id" SERIAL NOT NULL,
+    "productId" INTEGER NOT NULL,
+    "sku" TEXT NOT NULL,
+    "optionName" TEXT NOT NULL,
+    "optionValue" TEXT NOT NULL,
+    "priceOverride" INTEGER,
+    "stock" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "ProductVariant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'STAFF',
+    "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "refreshTokenVersion" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OtpToken" (
+    "id" SERIAL NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "type" "OtpType" NOT NULL,
+    "codeHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "consumedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OtpToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Customer" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "email" TEXT,
+    "address" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Customer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Order" (
+    "id" SERIAL NOT NULL,
+    "customerId" INTEGER NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "paymentMethod" "PaymentMethod" NOT NULL,
+    "totalAmount" INTEGER NOT NULL,
+    "trackingNumber" TEXT,
+    "courier" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" SERIAL NOT NULL,
+    "orderId" INTEGER NOT NULL,
+    "variantId" INTEGER NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "unitPrice" INTEGER NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Product_slug_key" ON "Product"("slug");
+
+-- CreateIndex
+CREATE INDEX "Product_categoryId_idx" ON "Product"("categoryId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductVariant_sku_key" ON "ProductVariant"("sku");
+
+-- CreateIndex
+CREATE INDEX "ProductVariant_productId_idx" ON "ProductVariant"("productId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "OtpToken_userId_type_idx" ON "OtpToken"("userId", "type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Customer_phone_key" ON "Customer"("phone");
+
+-- CreateIndex
+CREATE INDEX "Order_customerId_idx" ON "Order"("customerId");
+
+-- CreateIndex
+CREATE INDEX "Order_status_idx" ON "Order"("status");
+
+-- AddForeignKey
+ALTER TABLE "Product" ADD CONSTRAINT "Product_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductVariant" ADD CONSTRAINT "ProductVariant_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OtpToken" ADD CONSTRAINT "OtpToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_variantId_fkey" FOREIGN KEY ("variantId") REFERENCES "ProductVariant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+</file>
+
+<file path="prisma/migrations/migration_lock.toml">
+# Please do not edit this file manually
+# It should be added in your version-control system (e.g., Git)
+provider = "postgresql"
+</file>
+
 <file path="prisma/schema.prisma">
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -682,12 +1159,13 @@ module.exports = prisma;
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 
@@ -770,9 +1248,30 @@ model User {
   email               String   @unique
   passwordHash        String
   role                UserRole @default(STAFF)
+  isEmailVerified     Boolean  @default(false)
   refreshTokenVersion Int      @default(0)
+  otpTokens           OtpToken[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model OtpToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       OtpType
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, type])
 }
 
 model Customer {
@@ -818,7 +1317,7 @@ model OrderItem {
 const authService = require("./auth.service");
 const sendResponse = require("../../shared/utils/sendResponse");
 const httpStatus = require("../../shared/constants/httpStatus");
-const env = require("../../config/env");
+const env = require("../../../config/env");
 
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -830,14 +1329,11 @@ const REFRESH_COOKIE_OPTIONS = {
 
 class AuthController {
   async register(req, res) {
-    const { user, accessToken, refreshToken } = await authService.register(
-      req.body,
-    );
-    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    const result = await authService.register(req.body);
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
-      message: "Account created",
-      data: { user, accessToken },
+      message: result.message,
+      data: null,
     });
   }
 
@@ -849,6 +1345,11 @@ class AuthController {
     sendResponse(res, { message: "Logged in", data: { user, accessToken } });
   }
 
+  async me(req, res) {
+    const user = await authService.getById(req.user.sub);
+    sendResponse(res, { message: "OK", data: { user } });
+  }
+  
   async refresh(req, res) {
     const { user, accessToken, refreshToken } = await authService.refresh(
       req.cookies.refreshToken,
@@ -865,16 +1366,34 @@ class AuthController {
     res.clearCookie("refreshToken", { path: "/api/v1/auth" });
     sendResponse(res, { message: "Logged out" });
   }
+
+  async verifyEmail(req, res) {
+    const result = await authService.verifyEmail(req.body);
+    sendResponse(res, { message: result.message });
+  }
+
+  async resendVerification(req, res) {
+    const result = await authService.resendVerificationOtp(req.body);
+    sendResponse(res, { message: result.message });
+  }
+
+  async forgotPassword(req, res) {
+    const result = await authService.forgotPassword(req.body);
+    sendResponse(res, { message: result.message });
+  }
+
+  async resetPassword(req, res) {
+    const result = await authService.resetPassword(req.body);
+    sendResponse(res, { message: result.message });
+  }
 }
 
 module.exports = new AuthController();
 </file>
 
 <file path="src/features/auth/auth.repository.js">
-const prisma = require("../../config/prisma");
+const prisma = require("../../../config/prisma");
 
-// The ONLY file in the app allowed to talk to Prisma for User data.
-// If you swap Prisma for Drizzle tomorrow, this is the only file that changes.
 class AuthRepository {
   findByEmail(email) {
     return prisma.user.findUnique({ where: { email } });
@@ -894,6 +1413,58 @@ class AuthRepository {
       data: { refreshTokenVersion: { increment: 1 } },
     });
   }
+
+  markEmailVerified(userId) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { isEmailVerified: true },
+    });
+  }
+
+  updatePasswordAndBumpVersion(userId, passwordHash) {
+    // Bumping the token version here invalidates every existing session
+    // the moment a password is reset — a stolen refresh token becomes useless.
+    return prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, refreshTokenVersion: { increment: 1 } },
+    });
+  }
+
+  createOtp({ userId, type, codeHash, expiresAt }) {
+    return prisma.otpToken.create({
+      data: { userId, type, codeHash, expiresAt },
+    });
+  }
+
+  findLatestActiveOtp(userId, type) {
+    return prisma.otpToken.findFirst({
+      where: { userId, type, consumedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  consumeOtp(otpId) {
+    return prisma.otpToken.update({
+      where: { id: otpId },
+      data: { consumedAt: new Date() },
+    });
+  }
+
+  incrementOtpAttempts(otpId) {
+    return prisma.otpToken.update({
+      where: { id: otpId },
+      data: { attempts: { increment: 1 } },
+    });
+  }
+
+  invalidateActiveOtps(userId, type) {
+    // Ensures only one valid code exists at a time — resending
+    // shouldn't leave an old code silently valid alongside the new one.
+    return prisma.otpToken.updateMany({
+      where: { userId, type, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+  }
 }
 
 module.exports = new AuthRepository();
@@ -905,8 +1476,17 @@ const authController = require("./auth.controller");
 const validateRequest = require("../../shared/middlewares/validateRequest");
 const asyncHandler = require("../../shared/utils/asyncHandler");
 const authGuard = require("../../shared/middlewares/authGuard");
-const { authLimiter } = require("../../shared/middlewares/rateLimiter");
-const { registerSchema, loginSchema } = require("./auth.validation");
+const {
+  authLimiter,
+  otpRequestLimiter,
+} = require("../../shared/middlewares/rateLimiter");
+const {
+  registerSchema,
+  loginSchema,
+  emailOnlySchema,
+  verifyEmailSchema,
+  resetPasswordSchema,
+} = require("./auth.validation");
 
 const router = express.Router();
 
@@ -917,24 +1497,51 @@ router.post(
   asyncHandler(authController.register),
 );
 router.post(
+  "/verify-email",
+  authLimiter,
+  validateRequest(verifyEmailSchema),
+  asyncHandler(authController.verifyEmail),
+);
+router.post(
+  "/resend-verification",
+  otpRequestLimiter,
+  validateRequest(emailOnlySchema),
+  asyncHandler(authController.resendVerification),
+);
+
+router.post(
   "/login",
   authLimiter,
   validateRequest(loginSchema),
   asyncHandler(authController.login),
 );
+
+router.get("/me", authGuard(), asyncHandler(authController.me));
+
+router.post(
+  "/forgot-password",
+  otpRequestLimiter,
+  validateRequest(emailOnlySchema),
+  asyncHandler(authController.forgotPassword),
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  validateRequest(resetPasswordSchema),
+  asyncHandler(authController.resetPassword),
+);
+
 router.post("/refresh", asyncHandler(authController.refresh));
 router.post("/logout", authGuard(), asyncHandler(authController.logout));
 
 module.exports = router;
 </file>
 
-<file path="src/features/auth/auth.schema.js">
-
-</file>
-
 <file path="src/features/auth/auth.service.js">
 const authRepository = require("./auth.repository");
 const { hash, compare } = require("../../shared/utils/password");
+const { generateOtp, hashOtp, compareOtp } = require("../../shared/utils/otp");
+const { sendMail } = require("../../shared/utils/mailer");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -943,12 +1550,24 @@ const {
 const {
   ConflictError,
   UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
 } = require("../../shared/errors/AppError");
 const roles = require("../../shared/constants/roles");
+const env = require("../../../config/env");
+const {
+  otpTemplate,
+  otpPlainText,
+} = require("../../shared/utils/emailTemplate");
 
 function toSafeUser(user) {
-  // Never let passwordHash leave this layer. This is the DTO boundary.
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isEmailVerified: user.isEmailVerified,
+  };
 }
 
 function issueTokens(user) {
@@ -961,7 +1580,96 @@ function issueTokens(user) {
   return { accessToken, refreshToken };
 }
 
+const OTP_TEMPLATES = {
+  EMAIL_VERIFICATION: (code) => ({
+    subject: "Your Time Aura Verification Code",
+    html: otpTemplate({
+      title: "Verify Your Email",
+      heading: "Welcome to Time Aura",
+      message:
+        "Thank you for joining Time Aura. Please use the verification code below to activate your account.",
+      code,
+      buttonText: "Verify Account",
+      footer:
+        "If you didn't create this account, you can safely ignore this email.",
+    }),
+  }),
+
+  PASSWORD_RESET: (code) => ({
+    subject: "Reset your Time Aura password",
+    html: otpTemplate({
+      title: "Reset Password",
+      heading: "Password Reset Request",
+      message:
+        "We received a request to reset your password. Use the code below to continue.",
+      code,
+      buttonText: "Reset Password",
+      footer:
+        "If you didn't request a password reset, simply ignore this email.",
+    }),
+  }),
+};
+
 class AuthService {
+  async #issueAndSendOtp(user, type) {
+    await authRepository.invalidateActiveOtps(user.id, type);
+
+    const code = generateOtp();
+    const codeHash = hashOtp(code);
+    const expiresAt = new Date(
+      Date.now() + Number(env.OTP_TTL_MINUTES) * 60 * 1000,
+    );
+
+    await authRepository.createOtp({
+      userId: user.id,
+      type,
+      codeHash,
+      expiresAt,
+    });
+
+    const { subject, html } = OTP_TEMPLATES[type](code);
+
+    // Plain-text alternative improves deliverability without changing the HTML.
+    const text = otpPlainText({
+      heading:
+        type === "EMAIL_VERIFICATION"
+          ? "Welcome to Time Aura"
+          : "Password Reset Request",
+      message:
+        type === "EMAIL_VERIFICATION"
+          ? "Thank you for joining Time Aura. Please use the verification code below to activate your account."
+          : "We received a request to reset your password. Use the code below to continue.",
+      code,
+      footer:
+        type === "EMAIL_VERIFICATION"
+          ? "If you didn't create this account, you can safely ignore this email."
+          : "If you didn't request a password reset, simply ignore this email.",
+    });
+
+    await sendMail({ to: user.email, subject, html, text });
+  }
+
+  async #verifyOtp(user, type, code) {
+    const otp = await authRepository.findLatestActiveOtp(user.id, type);
+
+    // Same generic failure path for "no code", "expired", and "wrong code" —
+    // don't let the response shape tell an attacker which case they hit.
+    if (!otp || otp.expiresAt < new Date()) {
+      throw new UnauthorizedError("Invalid or expired code");
+    }
+    if (otp.attempts >= Number(env.OTP_MAX_ATTEMPTS)) {
+      throw new ForbiddenError(
+        "Too many incorrect attempts. Please request a new code.",
+      );
+    }
+    if (!compareOtp(code, otp.codeHash)) {
+      await authRepository.incrementOtpAttempts(otp.id);
+      throw new UnauthorizedError("Invalid or expired code");
+    }
+
+    await authRepository.consumeOtp(otp.id);
+  }
+
   async register({ name, email, password }) {
     const existing = await authRepository.findByEmail(email);
     if (existing) {
@@ -976,15 +1684,47 @@ class AuthService {
       role: roles.STAFF,
     });
 
-    const tokens = issueTokens(user);
-    return { user: toSafeUser(user), ...tokens };
+    await this.#issueAndSendOtp(user, "EMAIL_VERIFICATION");
+
+    // Deliberately no tokens returned — an unverified account cannot log in yet.
+    return {
+      message:
+        "Registration successful. Check your email for a verification code.",
+    };
+  }
+
+  async verifyEmail({ email, code }) {
+    const user = await authRepository.findByEmail(email);
+    if (!user) {
+      throw new NotFoundError("Account not found");
+    }
+    if (user.isEmailVerified) {
+      throw new ConflictError("Email is already verified");
+    }
+
+    await this.#verifyOtp(user, "EMAIL_VERIFICATION", code);
+    await authRepository.markEmailVerified(user.id);
+
+    return { message: "Email verified successfully. You can now log in." };
+  }
+
+  async resendVerificationOtp({ email }) {
+    const user = await authRepository.findByEmail(email);
+
+    // Same response whether or not the account exists — don't leak which emails are registered.
+    if (user && !user.isEmailVerified) {
+      await this.#issueAndSendOtp(user, "EMAIL_VERIFICATION");
+    }
+
+    return {
+      message:
+        "If an account with that email exists and is unverified, a new code has been sent.",
+    };
   }
 
   async login({ email, password }) {
     const user = await authRepository.findByEmail(email);
 
-    // Deliberately identical error for "no such user" and "wrong password".
-    // Distinguishing them lets an attacker enumerate valid admin emails.
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
     }
@@ -994,8 +1734,55 @@ class AuthService {
       throw new UnauthorizedError("Invalid email or password");
     }
 
+    if (!user.isEmailVerified) {
+      throw new ForbiddenError("Please verify your email before logging in");
+    }
+
     const tokens = issueTokens(user);
     return { user: toSafeUser(user), ...tokens };
+  }
+
+  async getById(userId) {
+    const user = await authRepository.findById(userId);
+    if (!user) throw new NotFoundError("User not found");
+    return toSafeUser(user);
+  }
+
+  async forgotPassword({ email }) {
+    const user = await authRepository.findByEmail(email);
+
+    if (user) {
+      await this.#issueAndSendOtp(user, "PASSWORD_RESET");
+    }
+
+    return {
+      message:
+        "If an account with that email exists, a reset code has been sent.",
+    };
+  }
+
+  async resetPassword({ email, code, newPassword }) {
+    const user = await authRepository.findByEmail(email);
+
+    // Generic error for both "no such account" and "wrong code" — this is an
+    // unauthenticated public endpoint, so it must not become an email-enumeration oracle.
+    if (!user) {
+      throw new UnauthorizedError("Invalid code or email");
+    }
+
+    try {
+      await this.#verifyOtp(user, "PASSWORD_RESET", code);
+    } catch {
+      throw new UnauthorizedError("Invalid code or email");
+    }
+
+    const passwordHash = await hash(newPassword);
+    await authRepository.updatePasswordAndBumpVersion(user.id, passwordHash);
+
+    return {
+      message:
+        "Password reset successful. Please log in with your new password.",
+    };
   }
 
   async refresh(refreshToken) {
@@ -1011,13 +1798,11 @@ class AuthService {
     }
 
     const user = await authRepository.findById(payload.sub);
-
-    // If the DB's version has moved on (logout / password reset), reject.
     if (!user || user.refreshTokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedError("Refresh token has been invalidated");
     }
 
-    const tokens = issueTokens(user); // rotation: old refresh token is now stale by role/version comparison
+    const tokens = issueTokens(user);
     return { user: toSafeUser(user), ...tokens };
   }
 
@@ -1029,7 +1814,7 @@ class AuthService {
 module.exports = new AuthService();
 </file>
 
-<file path="src/features/auth/auth.validations.js">
+<file path="src/features/auth/auth.validation.js">
 const { z } = require("zod");
 
 const registerSchema = z.object({
@@ -1043,19 +1828,28 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-module.exports = { registerSchema, loginSchema };
-</file>
+const emailOnlySchema = z.object({
+  email: z.string().email(),
+});
 
-<file path="src/features/auth/auth.validators.js">
+const verifyEmailSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+});
 
-</file>
+const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string().length(6, "Code must be 6 digits"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
 
-<file path="src/middlewares/auth.middleware.js">
-
-</file>
-
-<file path="src/routes/index.js">
-
+module.exports = {
+  registerSchema,
+  loginSchema,
+  emailOnlySchema,
+  verifyEmailSchema,
+  resetPasswordSchema,
+};
 </file>
 
 <file path="src/shared/constants/httpStatus.js">
@@ -1071,7 +1865,7 @@ module.exports = {
 };
 </file>
 
-<file path="src/shared/constants/role.js">
+<file path="src/shared/constants/roles.js">
 module.exports = {
   ADMIN: "ADMIN",
   STAFF: "STAFF",
@@ -1129,7 +1923,7 @@ module.exports = {
 };
 </file>
 
-<file path="src/shared/middleware/authGuard.js">
+<file path="src/shared/middlewares/authGuard.js">
 const { verifyAccessToken } = require("../utils/jwt");
 const { UnauthorizedError, ForbiddenError } = require("../errors/AppError");
 
@@ -1158,8 +1952,8 @@ function authGuard(...allowedRoles) {
 module.exports = authGuard;
 </file>
 
-<file path="src/shared/middleware/errorHandler.js">
-const env = require("../../config/env");
+<file path="src/shared/middlewares/errorHandler.js">
+const env = require("../../../config/env");
 const { AppError } = require("../errors/AppError");
 
 // eslint-disable-next-line no-unused-vars
@@ -1180,12 +1974,12 @@ function errorHandler(err, req, res, next) {
 module.exports = errorHandler;
 </file>
 
-<file path="src/shared/middleware/rateLimiter.js">
+<file path="src/shared/middlewares/rateLimiter.js">
 const rateLimit = require("express-rate-limit");
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 attempts per IP per window
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -1194,10 +1988,22 @@ const authLimiter = rateLimit({
   },
 });
 
-module.exports = { authLimiter };
+// Stricter: prevents email-bombing a victim's inbox via forgot-password/resend spam
+const otpRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please wait before requesting another code.",
+  },
+});
+
+module.exports = { authLimiter, otpRequestLimiter };
 </file>
 
-<file path="src/shared/middleware/validateRequest.js">
+<file path="src/shared/middlewares/validateRequest.js">
 const { ValidationError } = require("../errors/AppError");
 
 const validateRequest = (schema) => (req, res, next) => {
@@ -1217,10 +2023,6 @@ const validateRequest = (schema) => (req, res, next) => {
 module.exports = validateRequest;
 </file>
 
-<file path="src/shared/prisma/client.js">
-
-</file>
-
 <file path="src/shared/utils/asyncHandler.js">
 // Wraps every controller so a rejected promise or thrown error
 // is forwarded to Express's error pipeline instead of crashing the process.
@@ -1231,9 +2033,121 @@ const asyncHandler = (fn) => (req, res, next) => {
 module.exports = asyncHandler;
 </file>
 
+<file path="src/shared/utils/emailTemplate.js">
+const env = require("../../../config/env");
+
+function otpTemplate({ title, heading, message, code, footer }) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+</head>
+
+<body style="margin:0;padding:0;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fafafa;padding:40px 20px;">
+<tr>
+<td align="center">
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(128,0,32,0.08);">
+
+<!-- Header -->
+<tr>
+<td style="background:linear-gradient(135deg, #800020 0%, #5c0016 100%);padding:48px 40px;text-align:center;">
+<h1 style="margin:0;color:#ffffff;font-size:28px;letter-spacing:2px;font-weight:700;text-transform:uppercase;">Time Aura</h1>
+<p style="margin:12px 0 0 0;color:#f0d9e0;font-size:14px;letter-spacing:0.5px;">Luxury Watches • Wallets • Perfumes</p>
+</td>
+</tr>
+
+<!-- Content -->
+<tr>
+<td style="padding:48px 40px;">
+
+<h2 style="margin:0 0 20px 0;font-size:24px;color:#1a1a1a;font-weight:600;">${heading}</h2>
+
+<p style="font-size:15px;line-height:24px;color:#4a4a4a;margin:0 0 32px 0;">${message}</p>
+
+<!-- OTP Code -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td align="center" style="padding:32px 0;">
+<table cellpadding="0" cellspacing="0" border="0" style="background:#f8f4f5;border:2px dashed #800020;border-radius:12px;padding:24px 40px;">
+<tr>
+<td align="center">
+<div style="font-size:36px;font-weight:700;color:#800020;letter-spacing:8px;font-family:'Courier New',monospace;">${code}</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+<p style="text-align:center;font-size:13px;color:#666666;margin:0 0 32px 0;">Valid for <strong>${env.OTP_TTL_MINUTES} minutes</strong></p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7f9;border-left:4px solid #800020;border-radius:8px;padding:16px 20px;margin-bottom:32px;">
+<tr>
+<td>
+<p style="margin:0;font-size:13px;color:#666666;line-height:20px;">${footer}</p>
+</td>
+</tr>
+</table>
+
+<p style="font-size:13px;color:#999999;line-height:20px;margin:0;">Questions? Contact our support team at <a href="mailto:timeaura.online@gmail.com" style="color:#800020;text-decoration:none;">timeaura.online@gmail.com</a></p>
+
+</td>
+</tr>
+
+<!-- Footer -->
+<tr>
+<td style="background:#1a1a1a;padding:32px 40px;text-align:center;">
+<p style="margin:0 0 8px 0;color:#ffffff;font-size:14px;font-weight:600;letter-spacing:1px;">TIME AURA</p>
+<p style="margin:0 0 16px 0;font-size:12px;color:#999999;">Timeless Style. Precision You Trust.</p>
+<p style="margin:0;font-size:11px;color:#666666;">© ${new Date().getFullYear()} Time Aura. All rights reserved.</p>
+</td>
+</tr>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+`;
+}
+
+// Plain text version for spam prevention
+function otpPlainText({ heading, message, code, footer }) {
+  return `
+${heading}
+
+${message}
+
+Your verification code: ${code}
+
+This code expires in ${env.OTP_TTL_MINUTES} minutes.
+
+${footer}
+
+---
+TIME AURA
+Timeless Style. Precision You Trust.
+
+Questions? Reply to this email.
+© ${new Date().getFullYear()} Time Aura. All rights reserved.
+`;
+}
+
+module.exports = { otpTemplate, otpPlainText };
+</file>
+
 <file path="src/shared/utils/jwt.js">
 const jwt = require("jsonwebtoken");
-const env = require("../../config/env");
+const env = require("../../../config/env");
 
 function generateAccessToken(payload) {
   return jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
@@ -1263,9 +2177,53 @@ module.exports = {
 };
 </file>
 
+<file path="src/shared/utils/mailer.js">
+const nodemailer = require("nodemailer");
+const env = require("../../../config/env");
+
+const transporter = nodemailer.createTransport({
+  host: env.SMTP_HOST,
+  port: Number(env.SMTP_PORT),
+  secure: Number(env.SMTP_PORT) === 465,
+  auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+});
+
+async function sendMail({ to, subject, html, text }) {
+  return transporter.sendMail({
+    from: env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+    text,
+    // Helps some providers when clients show a plain-text fallback.
+  });
+}
+
+module.exports = { sendMail };
+</file>
+
+<file path="src/shared/utils/otp.js">
+const crypto = require("crypto");
+
+function generateOtp() {
+  // 6-digit numeric code, zero-padded
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
+function hashOtp(code) {
+  return crypto.createHash("sha256").update(code).digest("hex");
+}
+
+function compareOtp(code, hash) {
+  return hashOtp(code) === hash;
+}
+
+module.exports = { generateOtp, hashOtp, compareOtp };
+</file>
+
 <file path="src/shared/utils/password.js">
 const bcrypt = require("bcrypt");
-const env = require("../../config/env");
+const env = require("../../../config/env");
 
 const SALT_ROUNDS = parseInt(env.BCRYPT_SALT_ROUNDS, 10);
 
@@ -1299,7 +2257,7 @@ const compression = require("compression");
 const cookieParser = require("cookie-parser");
 const pinoHttp = require("pino-http");
 
-const authRoutes = require("./modules/auth/auth.routes");
+const authRoutes = require("./features/auth/auth.routes");
 const errorHandler = require("./shared/middlewares/errorHandler");
 const { NotFoundError } = require("./shared/errors/AppError");
 
@@ -1331,7 +2289,7 @@ module.exports = app;
 
 <file path="src/server.js">
 const app = require("./app");
-const env = require("./config/env");
+const env = require("../config/env");
 
 const server = app.listen(env.PORT, () => {
   console.log(`Time Aura backend running on port ${env.PORT}`);
@@ -1351,11 +2309,18 @@ node_modules
 /src/generated/prisma
 </file>
 
+<file path="cookies.txt">
+# Netscape HTTP Cookie File
+# https://curl.se/docs/http-cookies.html
+# This file was generated by libcurl! Edit at your own risk.
+</file>
+
 <file path="Dockerfile">
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
+COPY prisma ./prisma/
 COPY . .
 EXPOSE 5000
 CMD ["npm", "run", "dev"]
@@ -1385,7 +2350,7 @@ CMD ["npm", "run", "dev"]
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "^6.19.3",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -1395,13 +2360,15 @@ CMD ["npm", "run", "dev"]
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^9.0.3",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "prisma": "^6.19.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1"
+    "@types/node": "^26.1.1",
+    "nodemon": "^3.1.14"
   }
 }
 </file>
@@ -1423,13 +2390,301 @@ export default defineConfig({
 });
 </file>
 
+<file path="README.md">
+MVC
+
+Repository Pattern
+
+Prisma
+
+Authentication
+
+JWT
+
+OTP
+
+Validation
+
+Middleware
+
+
+
+Routes
+
+POST /signup
+
+POST /login
+
+POST /verify-email
+
+POST /forgot-password
+
+POST /reset-password
+
+GET /products
+
+POST /orders
+</file>
+
 </files>
+</file>
+
+<file path="frontend/app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+</file>
+
+<file path="frontend/app/layout.js">
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+</file>
+
+<file path="frontend/app/page.js">
+import Image from "next/image";
+
+export default function Home() {
+  return (
+    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <Image
+          className="dark:invert"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={100}
+          height={20}
+          priority
+        />
+        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            To get started, edit the page.js file.
+          </h1>
+          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            Looking for a starting point or more instructions? Head over to{" "}
+            <a
+              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Templates
+            </a>{" "}
+            or the{" "}
+            <a
+              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Learning
+            </a>{" "}
+            center.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <a
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className="dark:invert"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={16}
+              height={16}
+            />
+            Deploy Now
+          </a>
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Documentation
+          </a>
+        </div>
+      </main>
+    </div>
+  );
+}
+</file>
+
+<file path="frontend/public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="frontend/public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="frontend/public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="frontend/public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="frontend/public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
 </file>
 
 <file path="frontend/.dockerignore">
 node_modules
 .next
 .git
+</file>
+
+<file path="frontend/.gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="frontend/Dockerfile">
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+CMD ["npm", "run", "dev"]
+</file>
+
+<file path="frontend/eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="frontend/jsconfig.json">
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
+</file>
+
+<file path="frontend/next.config.mjs">
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+</file>
+
+<file path="frontend/postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
 </file>
 
 <file path="ARCHITECTURE.md">
@@ -1499,6 +2754,30 @@ Delete .next
 docker compose build --no-cache
 
 docker compose up --build
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2026 Muhammad Mubashir
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 </file>
 
 <file path="PROJECT_CONTEXT.md">
@@ -1672,6 +2951,7 @@ Protected Routes
 <file path="backend/config/env.js">
 const { z } = require("zod");
 
+// config/env.js
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
@@ -1687,9 +2967,10 @@ const envSchema = z.object({
   SMTP_PORT: z.string().default("587"),
   SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
-  EMAIL_FROM: z.string().default("Time Aura <timeaura.online@gmail.com>"),
+  EMAIL_FROM: z.string().default("'Time Aura' <${env.SMTP_USER}>"),
   OTP_TTL_MINUTES: z.string().default("10"),
   OTP_MAX_ATTEMPTS: z.string().default("5"),
+  GOOGLE_CLIENT_ID: z.string().min(1), // Web client ID from Google Cloud Console
 });
 const parsed = envSchema.safeParse(process.env);
 
@@ -1790,103 +3071,34 @@ class AuthRepository {
       data: { consumedAt: new Date() },
     });
   }
+
+  findByGoogleId(googleId) {
+    return prisma.user.findUnique({ where: { googleId } });
+  }
+
+  createGoogleUser({ name, email, googleId, role }) {
+    return prisma.user.create({
+      data: {
+        name,
+        email,
+        googleId,
+        role,
+        isEmailVerified: true, // Google has already verified this email for us
+      },
+    });
+  }
+
+  linkGoogleId(userId, googleId) {
+    // Existing local-password account signing in with Google for the first time
+    return prisma.user.update({
+      where: { id: userId },
+      data: { googleId, isEmailVerified: true },
+    });
+  }
+  
 }
 
 module.exports = new AuthRepository();
-</file>
-
-<file path="backend/src/features/auth/auth.schema.js">
-
-</file>
-
-<file path="backend/src/features/auth/auth.validators.js">
-
-</file>
-
-<file path="backend/src/middlewares/auth.middleware.js">
-
-</file>
-
-<file path="backend/src/routes/index.js">
-
-</file>
-
-<file path="backend/src/shared/constants/httpStatus.js">
-module.exports = {
-  OK: 200,
-  CREATED: 201,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  INTERNAL_SERVER_ERROR: 500,
-};
-</file>
-
-<file path="backend/src/shared/errors/AppError.js">
-class AppError extends Error {
-  constructor(message, statusCode) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true; // distinguishes "expected" errors from bugs
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-class ValidationError extends AppError {
-  constructor(message, details = null) {
-    super(message, 400);
-    this.details = details;
-  }
-}
-
-class UnauthorizedError extends AppError {
-  constructor(message = "Unauthorized") {
-    super(message, 401);
-  }
-}
-
-class ForbiddenError extends AppError {
-  constructor(message = "Forbidden") {
-    super(message, 403);
-  }
-}
-
-class NotFoundError extends AppError {
-  constructor(message = "Resource not found") {
-    super(message, 404);
-  }
-}
-
-class ConflictError extends AppError {
-  constructor(message = "Conflict") {
-    super(message, 409);
-  }
-}
-
-module.exports = {
-  AppError,
-  ValidationError,
-  UnauthorizedError,
-  ForbiddenError,
-  NotFoundError,
-  ConflictError,
-};
-</file>
-
-<file path="backend/src/shared/prisma/client.js">
-
-</file>
-
-<file path="backend/src/shared/utils/asyncHandler.js">
-// Wraps every controller so a rejected promise or thrown error
-// is forwarded to Express's error pipeline instead of crashing the process.
-const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-module.exports = asyncHandler;
 </file>
 
 <file path="backend/src/shared/utils/jwt.js">
@@ -1923,7 +3135,7 @@ module.exports = {
 
 <file path="backend/src/shared/utils/password.js">
 const bcrypt = require("bcrypt");
-const env = require("../..//../config/env");
+const env = require("../../../config/env");
 
 const SALT_ROUNDS = parseInt(env.BCRYPT_SALT_ROUNDS, 10);
 
@@ -1938,25 +3150,6 @@ async function compare(plainText, hashedValue) {
 module.exports = { hash, compare };
 </file>
 
-<file path="backend/src/shared/utils/sendResponse.js">
-function sendResponse(
-  res,
-  { statusCode = 200, message = "Success", data = null },
-) {
-  return res.status(statusCode).json({ success: true, message, data });
-}
-
-module.exports = sendResponse;
-</file>
-
-<file path="backend/.gitignore">
-node_modules
-# Keep environment variables out of version control
-.env
-
-/src/generated/prisma
-</file>
-
 <file path="backend/Dockerfile">
 FROM node:20-alpine
 WORKDIR /app
@@ -1968,204 +3161,21 @@ EXPOSE 5000
 CMD ["npm", "run", "dev"]
 </file>
 
-<file path="backend/jsconfig.json">
-{
-  "compilerOptions": {
-    "checkJs": false
-  }
-}
-</file>
+<file path="backend/prisma.config.ts">
+// This file was generated by Prisma, and assumes you have installed the following:
+// npm install --save-dev prisma dotenv
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
 
-<file path="frontend/app/globals.css">
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-</file>
-
-<file path="frontend/app/layout.js">
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"] || "",
+  },
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata = {
-  title: "Create Next App",
-  description: "Generated by create next app",
-};
-
-export default function RootLayout({ children }) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
-  );
-}
-</file>
-
-<file path="frontend/app/page.js">
-import Image from "next/image";
-
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
-}
-</file>
-
-<file path="frontend/public/file.svg">
-<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
-</file>
-
-<file path="frontend/public/globe.svg">
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
-</file>
-
-<file path="frontend/public/next.svg">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
-</file>
-
-<file path="frontend/public/vercel.svg">
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
-</file>
-
-<file path="frontend/public/window.svg">
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
-</file>
-
-<file path="frontend/.gitignore">
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 </file>
 
 <file path="frontend/AGENTS.md">
@@ -2225,56 +3235,6 @@ Keep services reusable.
 Never change Prisma schema without migrations.
 </file>
 
-<file path="frontend/Dockerfile">
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-CMD ["npm", "run", "dev"]
-</file>
-
-<file path="frontend/eslint.config.mjs">
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
-
-export default eslintConfig;
-</file>
-
-<file path="frontend/jsconfig.json">
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./*"]
-    }
-  }
-}
-</file>
-
-<file path="frontend/next.config.mjs">
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
-</file>
-
 <file path="frontend/package.json">
 {
   "name": "frontend",
@@ -2304,16 +3264,6 @@ export default nextConfig;
 }
 </file>
 
-<file path="frontend/postcss.config.mjs">
-const config = {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
-};
-
-export default config;
-</file>
-
 <file path="frontend/README.md">
 ```bash
 npm run dev
@@ -2338,28 +3288,48 @@ Middleware
 Protected Routes
 </file>
 
-<file path="LICENSE">
-MIT License
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-Copyright (c) 2026 Muhammad Mubashir
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+# testing
+/coverage
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+# next.js
+/.next/
+/out/
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="README.md">
+# timeAura
+Marketplace for watches, perfumes, and wallets
 </file>
 
 <file path="backend/prisma/schema.prisma">
@@ -2452,11 +3422,13 @@ enum UserRole {
   STAFF
 }
 
+// prisma/schema.prisma — update the User model
 model User {
   id                  Int      @id @default(autoincrement())
   name                String
   email               String   @unique
-  passwordHash        String
+  passwordHash        String?  // nullable — Google-only accounts have no local password
+  googleId            String?  @unique
   role                UserRole @default(STAFF)
   isEmailVerified     Boolean  @default(false)
   refreshTokenVersion Int      @default(0)
@@ -2464,7 +3436,6 @@ model User {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
-
 enum OtpType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
@@ -2539,14 +3510,11 @@ const REFRESH_COOKIE_OPTIONS = {
 
 class AuthController {
   async register(req, res) {
-    const { user, accessToken, refreshToken } = await authService.register(
-      req.body,
-    );
-    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    const result = await authService.register(req.body);
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
-      message: "Account created",
-      data: { user, accessToken },
+      message: result.message,
+      data: null,
     });
   }
 
@@ -2558,6 +3526,11 @@ class AuthController {
     sendResponse(res, { message: "Logged in", data: { user, accessToken } });
   }
 
+  async me(req, res) {
+    const user = await authService.getById(req.user.sub);
+    sendResponse(res, { message: "OK", data: { user } });
+  }
+  
   async refresh(req, res) {
     const { user, accessToken, refreshToken } = await authService.refresh(
       req.cookies.refreshToken,
@@ -2605,6 +3578,7 @@ const authController = require("./auth.controller");
 const validateRequest = require("../../shared/middlewares/validateRequest");
 const asyncHandler = require("../../shared/utils/asyncHandler");
 const authGuard = require("../../shared/middlewares/authGuard");
+
 const {
   authLimiter,
   otpRequestLimiter,
@@ -2615,6 +3589,7 @@ const {
   emailOnlySchema,
   verifyEmailSchema,
   resetPasswordSchema,
+  googleLoginSchema,
 } = require("./auth.validation");
 
 const router = express.Router();
@@ -2625,6 +3600,14 @@ router.post(
   validateRequest(registerSchema),
   asyncHandler(authController.register),
 );
+
+router.post(
+  "/google",
+  authLimiter,
+  validateRequest(googleLoginSchema),
+  asyncHandler(authController.googleLogin),
+);
+
 router.post(
   "/verify-email",
   authLimiter,
@@ -2644,6 +3627,8 @@ router.post(
   validateRequest(loginSchema),
   asyncHandler(authController.login),
 );
+
+router.get("/me", authGuard(), asyncHandler(authController.me));
 
 router.post(
   "/forgot-password",
@@ -2669,6 +3654,7 @@ const authRepository = require("./auth.repository");
 const { hash, compare } = require("../../shared/utils/password");
 const { generateOtp, hashOtp, compareOtp } = require("../../shared/utils/otp");
 const { sendMail } = require("../../shared/utils/mailer");
+const { verifyGoogleIdToken } = require("../../shared/utils/googleAuth");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -2682,6 +3668,10 @@ const {
 } = require("../../shared/errors/AppError");
 const roles = require("../../shared/constants/roles");
 const env = require("../../../config/env");
+const {
+  otpTemplate,
+  otpPlainText,
+} = require("../../shared/utils/emailTemplate");
 
 function toSafeUser(user) {
   return {
@@ -2705,12 +3695,31 @@ function issueTokens(user) {
 
 const OTP_TEMPLATES = {
   EMAIL_VERIFICATION: (code) => ({
-    subject: "Verify your Time Aura account",
-    html: `<p>Your verification code is <strong>${code}</strong>. It expires in ${env.OTP_TTL_MINUTES} minutes.</p>`,
+    subject: "Your Time Aura Verification Code",
+    html: otpTemplate({
+      title: "Verify Your Email",
+      heading: "Welcome to Time Aura",
+      message:
+        "Thank you for joining Time Aura. Please use the verification code below to activate your account.",
+      code,
+      buttonText: "Verify Account",
+      footer:
+        "If you didn't create this account, you can safely ignore this email.",
+    }),
   }),
+
   PASSWORD_RESET: (code) => ({
     subject: "Reset your Time Aura password",
-    html: `<p>Your password reset code is <strong>${code}</strong>. It expires in ${env.OTP_TTL_MINUTES} minutes. If you didn't request this, ignore this email.</p>`,
+    html: otpTemplate({
+      title: "Reset Password",
+      heading: "Password Reset Request",
+      message:
+        "We received a request to reset your password. Use the code below to continue.",
+      code,
+      buttonText: "Reset Password",
+      footer:
+        "If you didn't request a password reset, simply ignore this email.",
+    }),
   }),
 };
 
@@ -2732,7 +3741,25 @@ class AuthService {
     });
 
     const { subject, html } = OTP_TEMPLATES[type](code);
-    await sendMail({ to: user.email, subject, html });
+
+    // Plain-text alternative improves deliverability without changing the HTML.
+    const text = otpPlainText({
+      heading:
+        type === "EMAIL_VERIFICATION"
+          ? "Welcome to Time Aura"
+          : "Password Reset Request",
+      message:
+        type === "EMAIL_VERIFICATION"
+          ? "Thank you for joining Time Aura. Please use the verification code below to activate your account."
+          : "We received a request to reset your password. Use the code below to continue.",
+      code,
+      footer:
+        type === "EMAIL_VERIFICATION"
+          ? "If you didn't create this account, you can safely ignore this email."
+          : "If you didn't request a password reset, simply ignore this email.",
+    });
+
+    await sendMail({ to: user.email, subject, html, text });
   }
 
   async #verifyOtp(user, type, code) {
@@ -2779,6 +3806,37 @@ class AuthService {
     };
   }
 
+  async googleLogin({ idToken }) {
+    const { googleId, email, emailVerified, name } =
+      await verifyGoogleIdToken(idToken);
+
+    if (!emailVerified) {
+      throw new UnauthorizedError("Google account email is not verified");
+    }
+
+    let user = await authRepository.findByGoogleId(googleId);
+
+    if (!user) {
+      user = await authRepository.findByEmail(email);
+
+      if (user) {
+        // Same email already registered locally — link accounts rather than
+        // creating a duplicate. Avoids a confusing "email already exists" dead end.
+        user = await authRepository.linkGoogleId(user.id, googleId);
+      } else {
+        user = await authRepository.createGoogleUser({
+          name,
+          email,
+          googleId,
+          role: roles.STAFF,
+        });
+      }
+    }
+
+    const tokens = issueTokens(user);
+    return { user: toSafeUser(user), ...tokens };
+  }
+
   async verifyEmail({ email, code }) {
     const user = await authRepository.findByEmail(email);
     if (!user) {
@@ -2808,11 +3866,25 @@ class AuthService {
     };
   }
 
+  async googleLogin(req, res) {
+    const { user, accessToken, refreshToken } = await authService.googleLogin(
+      req.body,
+    );
+    res.cookie("refreshToken", refreshToken, REFRESH_COOKIE_OPTIONS);
+    sendResponse(res, { message: "Logged in", data: { user, accessToken } });
+  }
+
   async login({ email, password }) {
     const user = await authRepository.findByEmail(email);
 
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
+    }
+
+    if (!user.passwordHash) {
+      throw new UnauthorizedError(
+        "This account uses Google sign-in. Please continue with Google.",
+      );
     }
 
     const passwordMatches = await compare(password, user.passwordHash);
@@ -2826,6 +3898,12 @@ class AuthService {
 
     const tokens = issueTokens(user);
     return { user: toSafeUser(user), ...tokens };
+  }
+
+  async getById(userId) {
+    const user = await authRepository.findById(userId);
+    if (!user) throw new NotFoundError("User not found");
+    return toSafeUser(user);
   }
 
   async forgotPassword({ email }) {
@@ -2970,6 +4048,7 @@ process.on("unhandledRejection", (err) => {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
+    "google-auth-library": "^10.9.0",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.3",
@@ -2983,62 +4062,6 @@ process.on("unhandledRejection", (err) => {
     "nodemon": "^3.1.14"
   }
 }
-</file>
-
-<file path="backend/prisma.config.ts">
-// This file was generated by Prisma, and assumes you have installed the following:
-// npm install --save-dev prisma dotenv
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  datasource: {
-    url: process.env["DATABASE_URL"] || "",
-  },
-});
-</file>
-
-<file path=".gitignore">
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-.env
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 </file>
 
 <file path="docker-compose.yml">
@@ -3086,11 +4109,6 @@ services:
 
 volumes:
   pgdata:
-</file>
-
-<file path="README.md">
-# timeAura
-Marketplace for watches, perfumes, and wallets
 </file>
 
 </files>

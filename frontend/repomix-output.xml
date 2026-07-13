@@ -41,7 +41,13 @@ The content is organized as follows:
 
 <directory_structure>
 app/
+  login/
+    page.js
+  privacy/
+    page.js
   signup/
+    page.js
+  terms/
     page.js
   favicon.ico
   globals.css
@@ -50,14 +56,18 @@ app/
 components/
   features/
     auth/
-      AnimatedBackground.js
-      BrandPanel.js
-      InputField.js
+      AuthDivider.js
+      AuthLayout.js
+      FormField.js
+      GoogleButton.js
       LoadingSpinner.js
-      LuxuryLogo.js
-      PageTransition.js
       PasswordInput.js
+    legal/
+      LegalLayout.js
+      LegalSection.js
     PageTransition.js
+  providers/
+    QueryProvider.js
   ui/
     button.jsx
     checkbox.jsx
@@ -65,12 +75,15 @@ components/
     input.jsx
     label.jsx
     sonner.jsx
-    Toast.js
+hooks/
+  useAuth.js
 lib/
   api.js
   utils.js
   validations.js
 public/
+  images/
+    hero-luxury.jpeg
   file.svg
   globe.svg
   next.svg
@@ -93,34 +106,356 @@ README.md
 <files>
 This section contains the contents of the repository's files.
 
+<file path="app/login/page.js">
+"use client";
+
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Mail, Lock } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import AuthLayout from "@/components/features/auth/AuthLayout";
+import FormField from "@/components/features/auth/FormField";
+import PasswordInput from "@/components/features/auth/PasswordInput";
+import GoogleButton from "@/components/features/auth/GoogleButton";
+import AuthDivider from "@/components/features/auth/AuthDivider";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+
+import { loginSchema } from "@/lib/validations";
+import { useLogin } from "@/hooks/useAuth";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const loginMutation = useLogin();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = (values) => {
+    // Contract: POST /auth/login  body: { email, password }
+    loginMutation.mutate(
+      { email: values.email, password: values.password },
+      {
+        onSuccess: (res) => {
+          if (res?.data?.accessToken) {
+            localStorage.setItem("accessToken", res.data.accessToken);
+          }
+          toast.success("Welcome back", { description: "You're signed in." });
+          router.push("/");
+        },
+        onError: (err) => {
+          toast.error("Sign in failed", {
+            description: err.message || "Please check your credentials.",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <AuthLayout>
+      <header className="mb-5">
+        <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
+          Welcome Back
+        </h1>
+        <div
+          className="w-12 h-[3px] bg-[#C9A14A] mt-2 mb-3"
+          aria-hidden="true"
+        />
+        <p className="text-neutral-600 text-sm">
+          Sign in to continue your Time Aura experience.
+        </p>
+      </header>
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+        noValidate
+      >
+        <FormField
+          id="email"
+          label="Email Address"
+          icon={Mail}
+          type="email"
+          autoComplete="email"
+          placeholder="Enter your email address"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="password"
+              className="text-[10px] font-semibold tracking-[0.15em] uppercase text-neutral-800"
+            >
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-[11px] text-[#C9A14A] font-medium hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <Lock
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none"
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+            <PasswordInput
+              id="password"
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              className="pl-9"
+              aria-invalid={!!errors.password}
+              {...register("password")}
+            />
+          </div>
+          {errors.password && (
+            <p role="alert" className="text-[11px] text-destructive pl-1">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={loginMutation.isPending}
+          className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
+        >
+          {loginMutation.isPending ? (
+            <span className="flex items-center gap-2">
+              <LoadingSpinner /> Signing In...
+            </span>
+          ) : (
+            "Sign In"
+          )}
+        </Button>
+
+        <AuthDivider />
+
+        <GoogleButton />
+
+        <p className="text-center text-xs text-neutral-600 mt-3">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="text-[#C9A14A] font-semibold hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
+  );
+}
+</file>
+
+<file path="app/privacy/page.js">
+import Link from "next/link";
+import LegalLayout from "@/components/features/legal/LegalLayout";
+import LegalSection from "@/components/features/legal/LegalSection";
+
+export const metadata = {
+  title: "Privacy Policy — Time Aura",
+  description:
+    "How Time Aura collects, uses, and protects your personal information.",
+};
+
+export default function PrivacyPage() {
+  return (
+    <LegalLayout title="Privacy Policy" lastUpdated="2026-01-01">
+      <p>
+        At <strong>Time Aura</strong>, we respect your privacy and are committed
+        to protecting your personal information. This Privacy Policy explains
+        what data we collect, how we use it, and the rights you have.
+      </p>
+
+      <LegalSection number="1" title="Information We Collect">
+        <p>We collect the following categories of information:</p>
+        <ul>
+          <li>
+            <strong>Account information:</strong> name, email address, and
+            password (stored securely as a hash).
+          </li>
+          <li>
+            <strong>Order information:</strong> shipping address, phone number,
+            and payment method.
+          </li>
+          <li>
+            <strong>Usage data:</strong> pages viewed, products browsed, and
+            interaction with our Service.
+          </li>
+          <li>
+            <strong>Google account data:</strong> if you sign in with Google, we
+            receive your name, email, and Google ID — nothing else.
+          </li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection number="2" title="How We Use Your Information">
+        <p>We use your information to:</p>
+        <ul>
+          <li>Create and manage your account.</li>
+          <li>Process and fulfil your orders.</li>
+          <li>Send you verification codes and transactional emails.</li>
+          <li>Improve our products, services, and customer experience.</li>
+          <li>Detect and prevent fraud or abuse of the Service.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection number="3" title="Legal Basis for Processing">
+        <p>
+          We process your personal data on the basis of contract performance (to
+          fulfil your orders), legitimate interest (to improve our Service), and
+          your consent (for marketing communications, where applicable).
+        </p>
+      </LegalSection>
+
+      <LegalSection number="4" title="Sharing Your Information">
+        <p>
+          Time Aura <strong>does not sell</strong> your personal information. We
+          share limited data only with:
+        </p>
+        <ul>
+          <li>Courier partners, to deliver your orders.</li>
+          <li>
+            Payment processors (JazzCash, EasyPaisa, card networks) to complete
+            transactions.
+          </li>
+          <li>
+            Email delivery providers to send verification and transactional
+            messages.
+          </li>
+          <li>Authorities, where required by law.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection number="5" title="Data Security">
+        <p>
+          Passwords are hashed using industry-standard bcrypt. Verification
+          codes are stored as SHA-256 hashes and expire after a short time.
+          Refresh tokens are stored in secure, HTTP-only cookies. We use HTTPS
+          across the Service.
+        </p>
+        <p>
+          Despite these measures, no online service can guarantee absolute
+          security. You are responsible for keeping your account password
+          confidential.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="6" title="Data Retention">
+        <p>
+          We retain your account and order data for as long as your account is
+          active or as required by applicable law and tax regulations. You may
+          request deletion of your account at any time.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="7" title="Cookies">
+        <p>
+          We use essential cookies to keep you signed in and to remember your
+          preferences. We do not use third-party advertising cookies. You can
+          disable cookies in your browser settings, but some parts of the
+          Service may not function correctly without them.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="8" title="Your Rights">
+        <p>You have the right to:</p>
+        <ul>
+          <li>Access the personal information we hold about you.</li>
+          <li>Request correction of inaccurate data.</li>
+          <li>Request deletion of your account and associated data.</li>
+          <li>Withdraw consent for marketing communications at any time.</li>
+        </ul>
+        <p>
+          To exercise any of these rights, email us at{" "}
+          <a href="mailto:timeaura.online@gmail.com">
+            timeaura.online@gmail.com
+          </a>
+          .
+        </p>
+      </LegalSection>
+
+      <LegalSection number="9" title="Children's Privacy">
+        <p>
+          Time Aura is not directed at individuals under 18. We do not knowingly
+          collect personal information from children. If you believe we have
+          inadvertently done so, please contact us and we will delete the
+          information.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="10" title="International Transfers">
+        <p>
+          Your information may be processed on servers located outside Pakistan.
+          Where this occurs, we take steps to ensure your data receives an
+          equivalent level of protection.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="11" title="Changes to This Policy">
+        <p>
+          We may update this Privacy Policy from time to time. Material changes
+          will be communicated via email or a prominent notice on the Service.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="12" title="Contact">
+        <p>
+          For any privacy-related questions, please email us at{" "}
+          <a href="mailto:timeaura.online@gmail.com">
+            timeaura.online@gmail.com
+          </a>
+          . See also our <Link href="/terms">Terms of Service</Link>.
+        </p>
+      </LegalSection>
+    </LegalLayout>
+  );
+}
+</file>
+
 <file path="app/signup/page.js">
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { User, Mail, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
-import BrandPanel from "@/components/features/auth/BrandPanel";
+import AuthLayout from "@/components/features/auth/AuthLayout";
+import FormField from "@/components/features/auth/FormField";
 import PasswordInput from "@/components/features/auth/PasswordInput";
+import GoogleButton from "@/components/features/auth/GoogleButton";
+import AuthDivider from "@/components/features/auth/AuthDivider";
 import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
-import PageTransition from "@/components/features/PageTransition";
 
 import { registerSchema } from "@/lib/validations";
-import { authApi } from "@/lib/api";
+import { useRegister } from "@/hooks/useAuth";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const registerMutation = useRegister();
 
   const {
     register,
@@ -139,287 +474,326 @@ export default function SignupPage() {
     },
   });
 
-  const onSubmit = async (values) => {
-    setSubmitting(true);
-    try {
-      // Contract: POST /auth/register  body: { name, email, password }
-      await authApi.register({
-        name: values.name,
-        email: values.email,
-        password: values.password,
-      });
-
-      toast.success("Account created", {
-        description: "Check your email for the 6-digit verification code.",
-      });
-      router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
-    } catch (err) {
-      toast.error("Registration failed", {
-        description: err.message || "Please try again.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+  const onSubmit = (values) => {
+    // Contract: POST /auth/register  body: { name, email, password }
+    registerMutation.mutate(
+      { name: values.name, email: values.email, password: values.password },
+      {
+        onSuccess: () => {
+          toast.success("Account created", {
+            description: "Check your email for the 6-digit verification code.",
+          });
+          router.push(
+            `/verify-email?email=${encodeURIComponent(values.email)}`,
+          );
+        },
+        onError: (err) => {
+          toast.error("Registration failed", {
+            description: err.message || "Please try again.",
+          });
+        },
+      },
+    );
   };
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-neutral-100 flex items-center justify-center p-4 lg:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] bg-[#FAFAFA] rounded-2xl shadow-2xl overflow-hidden min-h-[720px]"
+    <AuthLayout>
+      <header className="mb-4">
+        <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
+          Create Your Account
+        </h1>
+        <div
+          className="w-12 h-[3px] bg-[#C9A14A] mt-2 mb-2"
+          aria-hidden="true"
+        />
+      </header>
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-3"
+        noValidate
+      >
+        <FormField
+          id="name"
+          label="Full Name"
+          icon={User}
+          autoComplete="name"
+          placeholder="Enter your full name"
+          error={errors.name?.message}
+          {...register("name")}
+        />
+
+        <FormField
+          id="email"
+          label="Email Address"
+          icon={Mail}
+          type="email"
+          autoComplete="email"
+          placeholder="Enter your email address"
+          error={errors.email?.message}
+          {...register("email")}
+        />
+
+        <FormField
+          id="password"
+          label="Password"
+          icon={Lock}
+          error={errors.password?.message}
         >
-          <div className="hidden lg:block">
-            <BrandPanel />
-          </div>
+          <PasswordInput
+            id="password"
+            autoComplete="new-password"
+            placeholder="Create a password"
+            className="pl-9"
+            aria-invalid={!!errors.password}
+            {...register("password")}
+          />
+        </FormField>
 
-          <div className="p-8 sm:p-12 lg:p-14 flex flex-col justify-center">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
+        <FormField
+          id="confirmPassword"
+          label="Confirm Password"
+          icon={Lock}
+          error={errors.confirmPassword?.message}
+        >
+          <PasswordInput
+            id="confirmPassword"
+            autoComplete="new-password"
+            placeholder="Confirm your password"
+            className="pl-9"
+            aria-invalid={!!errors.confirmPassword}
+            {...register("confirmPassword")}
+          />
+        </FormField>
+
+        <div className="pt-0.5">
+          <div className="flex items-start gap-2.5">
+            <Controller
+              name="terms"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="terms"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  className="mt-[2px]"
+                />
+              )}
+            />
+            <Label
+              htmlFor="terms"
+              className="text-xs text-neutral-700 leading-relaxed font-normal"
             >
-              <h2 className="font-serif text-3xl lg:text-4xl font-bold text-[#5c0016] tracking-wide uppercase">
-                Create Your Account
-              </h2>
-              <div className="w-14 h-[3px] bg-[#C9A14A] mt-3 mb-4" />
-              <p className="text-neutral-600 text-[15px] mb-8">
-                Join Time Aura and experience timeless elegance.
-              </p>
-
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col gap-5"
+              I agree to the{" "}
+              <Link
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#C9A14A] font-medium hover:underline"
               >
-                {/* Full Name */}
-                <div className="flex flex-col gap-2">
-                  <Label
-                    htmlFor="name"
-                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
-                  >
-                    Full Name
-                  </Label>
-                  <div className="relative">
-                    <User
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400"
-                      strokeWidth={1.8}
-                    />
-                    <Input
-                      id="name"
-                      placeholder="Enter your full name"
-                      className="h-[52px] pl-10 rounded-2xl"
-                      aria-invalid={!!errors.name}
-                      {...register("name")}
-                    />
-                  </div>
-                  {errors.name && (
-                    <p className="text-xs text-destructive pl-1">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Email */}
-                <div className="flex flex-col gap-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
-                  >
-                    Email Address
-                  </Label>
-                  <div className="relative">
-                    <Mail
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400"
-                      strokeWidth={1.8}
-                    />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      className="h-[52px] pl-10 rounded-2xl"
-                      aria-invalid={!!errors.email}
-                      {...register("email")}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-xs text-destructive pl-1">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Password */}
-                <div className="flex flex-col gap-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
-                  >
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400 z-10"
-                      strokeWidth={1.8}
-                    />
-                    <PasswordInput
-                      id="password"
-                      placeholder="Create a password"
-                      className="h-[52px] pl-10 rounded-2xl"
-                      aria-invalid={!!errors.password}
-                      {...register("password")}
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-xs text-destructive pl-1">
-                      {errors.password.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Confirm Password */}
-                <div className="flex flex-col gap-2">
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-[11px] font-semibold tracking-[0.15em] uppercase"
-                  >
-                    Confirm Password
-                  </Label>
-                  <div className="relative">
-                    <Lock
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-neutral-400 z-10"
-                      strokeWidth={1.8}
-                    />
-                    <PasswordInput
-                      id="confirmPassword"
-                      placeholder="Confirm your password"
-                      className="h-[52px] pl-10 rounded-2xl"
-                      aria-invalid={!!errors.confirmPassword}
-                      {...register("confirmPassword")}
-                    />
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-xs text-destructive pl-1">
-                      {errors.confirmPassword.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Terms */}
-                <div className="pt-1">
-                  <div className="flex items-start gap-3">
-                    <Controller
-                      name="terms"
-                      control={control}
-                      render={({ field }) => (
-                        <Checkbox
-                          id="terms"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="mt-[2px] data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                        />
-                      )}
-                    />
-                    <Label
-                      htmlFor="terms"
-                      className="text-sm text-neutral-700 leading-relaxed font-normal"
-                    >
-                      I agree to the{" "}
-                      <a
-                        href="#"
-                        className="text-[#C9A14A] font-medium hover:underline"
-                      >
-                        Terms of Service
-                      </a>{" "}
-                      and{" "}
-                      <a
-                        href="#"
-                        className="text-[#C9A14A] font-medium hover:underline"
-                      >
-                        Privacy Policy
-                      </a>
-                    </Label>
-                  </div>
-                  {errors.terms && (
-                    <p className="text-xs text-destructive pl-8 mt-1">
-                      {errors.terms.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Submit */}
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="mt-2 h-[54px] rounded-2xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-sm uppercase shadow-lg shadow-[#5c0016]/20"
-                >
-                  {submitting ? (
-                    <span className="flex items-center gap-2">
-                      <LoadingSpinner /> Creating Account...
-                    </span>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-
-                {/* Divider */}
-                <div className="flex items-center gap-4 my-2">
-                  <div className="flex-1 h-px bg-neutral-200" />
-                  <span className="text-xs text-neutral-500 tracking-widest">
-                    OR
-                  </span>
-                  <div className="flex-1 h-px bg-neutral-200" />
-                </div>
-
-                {/* Google */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-[54px] rounded-2xl bg-white border-neutral-200 hover:bg-neutral-50 font-medium text-sm tracking-[0.1em] uppercase text-neutral-800"
-                >
-                  <GoogleIcon />
-                  Continue with Google
-                </Button>
-
-                <p className="text-center text-sm text-neutral-600 mt-4">
-                  Already have an account?{" "}
-                  <Link
-                    href="/login"
-                    className="text-[#C9A14A] font-semibold hover:underline"
-                  >
-                    Sign in
-                  </Link>
-                </p>
-              </form>
-            </motion.div>
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#C9A14A] font-medium hover:underline"
+              >
+                Privacy Policy
+              </Link>
+            </Label>
           </div>
-        </motion.div>
-      </div>
-    </PageTransition>
+          {errors.terms && (
+            <p
+              role="alert"
+              className="text-[11px] text-destructive pl-7 mt-0.5"
+            >
+              {errors.terms.message}
+            </p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={registerMutation.isPending}
+          className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
+        >
+          {registerMutation.isPending ? (
+            <span className="flex items-center gap-2">
+              <LoadingSpinner /> Creating Account...
+            </span>
+          ) : (
+            "Create Account"
+          )}
+        </Button>
+
+        <AuthDivider />
+
+        <GoogleButton />
+
+        <p className="text-center text-xs text-neutral-600 mt-2">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="text-[#C9A14A] font-semibold hover:underline"
+          >
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }
+</file>
 
-function GoogleIcon() {
+<file path="app/terms/page.js">
+import Link from "next/link";
+import LegalLayout from "@/components/features/legal/LegalLayout";
+import LegalSection from "@/components/features/legal/LegalSection";
+
+export const metadata = {
+  title: "Terms of Service — Time Aura",
+  description:
+    "The terms and conditions for using Time Aura's luxury watches, wallets, and perfumes platform.",
+};
+
+export default function TermsPage() {
   return (
-    <svg width="20" height="20" viewBox="0 0 48 48" className="mr-1">
-      <path
-        fill="#EA4335"
-        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-      />
-      <path
-        fill="#4285F4"
-        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-      />
-      <path
-        fill="#34A853"
-        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-      />
-    </svg>
+    <LegalLayout title="Terms of Service" lastUpdated="2026-01-01">
+      <p>
+        Welcome to <strong>Time Aura</strong>. By accessing or using our
+        website, mobile application, and services (collectively, the
+        &ldquo;Service&rdquo;), you agree to be bound by these Terms of Service.
+        Please read them carefully.
+      </p>
+
+      <LegalSection number="1" title="Acceptance of Terms">
+        <p>
+          By creating an account or placing an order with Time Aura, you confirm
+          that you are at least 18 years of age and that you accept these Terms
+          of Service and our <Link href="/privacy">Privacy Policy</Link>. If you
+          do not agree, you must not use the Service.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="2" title="Your Account">
+        <p>
+          You are responsible for maintaining the confidentiality of your
+          account credentials and for all activity that occurs under your
+          account. You agree to:
+        </p>
+        <ul>
+          <li>
+            Provide accurate, current, and complete information at registration.
+          </li>
+          <li>Verify your email address using the code we send you.</li>
+          <li>
+            Notify us immediately of any unauthorized access to your account.
+          </li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection number="3" title="Products & Orders">
+        <p>
+          Time Aura offers premium watches, wallets, and perfumes. All product
+          descriptions, prices, and availability are subject to change without
+          notice. We reserve the right to refuse or cancel an order at our
+          discretion, including cases of pricing errors or suspected fraud.
+        </p>
+        <p>
+          Prices are displayed in Pakistani Rupees (PKR) and are inclusive of
+          applicable taxes unless stated otherwise.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="4" title="Payment">
+        <p>
+          We accept Cash on Delivery, JazzCash, EasyPaisa, and card payments
+          where available. By placing an order, you confirm that the payment
+          details you provide are valid and correct.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="5" title="Shipping & Delivery">
+        <p>
+          Delivery times are estimates only. Time Aura is not liable for delays
+          caused by couriers or events outside our reasonable control. Risk of
+          loss transfers to you upon delivery.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="6" title="Returns & Refunds">
+        <p>
+          Products may be returned within <strong>7 days</strong> of delivery,
+          provided they are unused, in original packaging, and accompanied by
+          proof of purchase. Perfumes and personal-use items are non-returnable
+          once opened for hygiene reasons.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="7" title="Intellectual Property">
+        <p>
+          All content on the Service — including logos, product photography,
+          text, and designs — is the property of Time Aura or its licensors and
+          is protected by intellectual-property laws. You may not reproduce or
+          use this content without prior written consent.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="8" title="Prohibited Conduct">
+        <p>You agree not to:</p>
+        <ul>
+          <li>Use the Service for any unlawful or fraudulent purpose.</li>
+          <li>
+            Attempt to gain unauthorized access to any part of the Service.
+          </li>
+          <li>
+            Interfere with or disrupt the Service or its underlying
+            infrastructure.
+          </li>
+          <li>
+            Resell products purchased from Time Aura without authorization.
+          </li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection number="9" title="Limitation of Liability">
+        <p>
+          To the maximum extent permitted by law, Time Aura shall not be liable
+          for any indirect, incidental, or consequential damages arising from
+          your use of the Service. Our total liability for any claim shall not
+          exceed the amount paid by you for the product giving rise to the
+          claim.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="10" title="Changes to These Terms">
+        <p>
+          We may update these Terms of Service from time to time. Continued use
+          of the Service after any changes constitutes your acceptance of the
+          updated terms.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="11" title="Governing Law">
+        <p>
+          These Terms are governed by the laws of the Islamic Republic of
+          Pakistan. Any disputes shall be resolved in the courts of Lahore,
+          Pakistan.
+        </p>
+      </LegalSection>
+
+      <LegalSection number="12" title="Contact">
+        <p>
+          For any questions about these Terms, please email us at{" "}
+          <a href="mailto:timeaura.online@gmail.com">
+            timeaura.online@gmail.com
+          </a>
+          .
+        </p>
+      </LegalSection>
+    </LegalLayout>
   );
 }
 </file>
@@ -512,12 +886,26 @@ function GoogleIcon() {
 html, body {
   margin: 0;
   padding: 0;
-  min-height: 100%;
+  height: 100%;
+  /* Allow layout containers to manage scrolling; prevents stray page scrollbars */
+  overflow: hidden;
   font-family: var(--font-inter), system-ui, sans-serif;
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Ensure auth panels don't force body scrolling */
+#__next {
+  height: 100%;
+}
+
+
+/* Neutral scrollbar for internal scroll containers */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
 
 .font-serif {
   font-family: var(--font-playfair), Georgia, serif;
@@ -539,11 +927,36 @@ html, body {
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #1a0a10; }
 ::-webkit-scrollbar-thumb { background: #800020; border-radius: 4px; }
+
+/* Legal document typography */
+.legal-prose p {
+  color: #404040;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.legal-prose ul li {
+  margin: 0.35rem 0;
+  color: #404040;
+}
+.legal-prose strong {
+  color: #171717;
+  font-weight: 600;
+}
+.legal-prose a {
+  color: #C9A14A;
+  font-weight: 500;
+}
+.legal-prose a:hover {
+  text-decoration: underline;
+}
 </file>
 
 <file path="app/layout.js">
 import { Playfair_Display, Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import QueryProvider from "@/components/providers/QueryProvider";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -567,18 +980,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
       <body>
-        {children}
-        <Toaster
-          position="top-right"
-          richColors
-          closeButton
-          toastOptions={{
-            style: {
-              borderRadius: "16px",
-              fontFamily: "var(--font-inter)",
-            },
-          }}
-        />
+        <QueryProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              style: { borderRadius: "16px", fontFamily: "var(--font-inter)" },
+            }}
+          />
+        </QueryProvider>
       </body>
     </html>
   );
@@ -653,64 +1065,28 @@ export default function Home() {
 }
 </file>
 
-<file path="components/features/auth/AnimatedBackground.js">
-"use client";
-
-import { motion } from "framer-motion";
-import { useMemo } from "react";
-
-export default function AnimatedBackground() {
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 22 }).map((_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 3 + 1,
-        duration: Math.random() * 12 + 8,
-        delay: Math.random() * 4,
-      })),
-    [],
-  );
-
+<file path="components/features/auth/AuthDivider.js">
+export default function AuthDivider({ label = "OR" }) {
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p) => (
-        <motion.span
-          key={p.id}
-          className="absolute rounded-full bg-[#C9A14A]"
-          style={{
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
-            boxShadow: "0 0 8px rgba(201, 161, 74, 0.6)",
-          }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, 15, 0],
-            opacity: [0.2, 0.8, 0.2],
-          }}
-          transition={{
-            duration: p.duration,
-            delay: p.delay,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
+    <div
+      className="flex items-center gap-4 my-2"
+      role="separator"
+      aria-label={label}
+    >
+      <div className="flex-1 h-px bg-neutral-200" />
+      <span className="text-xs text-neutral-500 tracking-widest">{label}</span>
+      <div className="flex-1 h-px bg-neutral-200" />
     </div>
   );
 }
 </file>
 
-<file path="components/features/auth/BrandPanel.js">
+<file path="components/features/auth/AuthLayout.js">
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Watch, Wallet, SprayCan } from "lucide-react";
-import LuxuryLogo from "./LuxuryLogo";
-import AnimatedBackground from "./AnimatedBackground";
 
 const categories = [
   { icon: Watch, label: "WATCHES" },
@@ -718,130 +1094,209 @@ const categories = [
   { icon: SprayCan, label: "PERFUMES" },
 ];
 
-export default function BrandPanel() {
+export default function AuthLayout({ children }) {
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-l-2xl bg-gradient-to-br from-[#1a0a10] via-[#2a0a14] to-[#3d0a1a]">
-      <div
-        className="absolute inset-0 opacity-60 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1600&q=80')",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/30" />
-
-      <AnimatedBackground />
-
-      <div className="relative h-full flex flex-col justify-between p-10 lg:p-14 text-white">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <LuxuryLogo size="md" />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="max-w-md"
-        >
-          <h2 className="elevate-title font-serif text-6xl lg:text-7xl font-black leading-none uppercase tracking-wide">
-            Elevate
-          </h2>
-          <p className="script-text text-4xl lg:text-5xl -mt-2 mb-6">
-            Every Moment
-          </p>
-          <div className="w-16 h-[3px] bg-[#C9A14A] mb-6" />
-          <p className="text-white/85 text-[15px] leading-relaxed max-w-sm">
-            Premium watches. Signature fragrances. Timeless wallets. Crafted for
-            those who value style, quality, and authenticity.
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex gap-8"
-        >
-          {categories.map(({ icon: Icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-full border border-[#C9A14A]/60 flex items-center justify-center">
-                <Icon className="w-6 h-6 text-[#C9A14A]" strokeWidth={1.5} />
-              </div>
-              <span className="text-[10px] tracking-[0.2em] text-white/80">
-                {label}
-              </span>
-              <div className="w-6 h-0.5 bg-[#C9A14A]" />
+    <div className="h-screen w-screen overflow-hidden bg-[#FAFAFA] flex">
+      {/* LEFT: hero image + branding overlay */}
+      <aside className="relative hidden lg:block lg:w-1/2 h-full bg-[#0a0508]">
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-y-0 bg-cover bg-center"
+            style={{
+              backgroundImage: "url('/images/hero-luxury.jpeg')",
+              left: "20%", // pushes image left edge OFF-screen to the left
+              top:"10%",
+              right: "0", // image extends to right edge
+              width: "90%", // image is 130% of container width
+            }}
+            role="img"
+            aria-label="Time Aura — luxury watch, perfume and wallet"
+          />
+        </div>
+        {/* Darken the image so text stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/55 to-black/25" />
+        {/* Overlay content — logo top, tagline middle, categories bottom */}
+        <div className="relative z-10 h-full flex flex-col justify-between p-8 xl:p-12 text-white">
+          {/* Logo */}
+          <motion.header
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center gap-3"
+          >
+            <div className="w-12 h-12 rounded-full border-2 border-[#C9A14A] flex items-center justify-center shrink-0">
+              <Watch className="w-6 h-6 text-[#C9A14A]" strokeWidth={1.5} />
             </div>
-          ))}
+            <div>
+              <h1 className="font-serif text-2xl xl:text-3xl font-bold tracking-[0.15em]">
+                TIME AURA
+              </h1>
+              <p className="text-[9px] xl:text-[10px] tracking-[0.25em] text-white/70 mt-0.5">
+                TIMELESS STYLE. PRECISION YOU TRUST.
+              </p>
+            </div>
+          </motion.header>
+
+          {/* Tagline */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            className="max-w-sm"
+          >
+            <h2 className="elevate-title font-serif text-5xl xl:text-6xl font-black leading-none uppercase tracking-wide">
+              Elevate
+            </h2>
+            <p className="script-text text-3xl xl:text-4xl -mt-1 mb-4">
+              Every Moment
+            </p>
+            <div
+              className="w-14 h-[3px] bg-[#C9A14A] mb-4"
+              aria-hidden="true"
+            />
+            <p className="text-white/85 text-sm leading-relaxed">
+              Premium watches. Signature fragrances. Timeless wallets. Crafted
+              for those who value style, quality, and authenticity.
+            </p>
+          </motion.div>
+
+          {/* Category icons */}
+          <motion.ul
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="flex gap-6 xl:gap-8"
+          >
+            {categories.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex flex-col items-center gap-1.5">
+                <div className="w-12 h-12 rounded-full border border-[#C9A14A]/60 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-[#C9A14A]" strokeWidth={1.5} />
+                </div>
+                <span className="text-[9px] tracking-[0.2em] text-white/80">
+                  {label}
+                </span>
+                <div className="w-5 h-0.5 bg-[#C9A14A]" aria-hidden="true" />
+              </li>
+            ))}
+          </motion.ul>
+        </div>
+      </aside>
+
+      {/* RIGHT: form */}
+      <main className="w-full lg:w-1/2 h-full flex items-center justify-center overflow-y-auto px-6 sm:px-10 lg:px-12 xl:px-16 py-6">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-[420px]"
+        >
+          {children}
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }
 </file>
 
-<file path="components/features/auth/InputField.js">
+<file path="components/features/auth/FormField.js">
 "use client";
 
-import { forwardRef, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { forwardRef } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
-const InputField = forwardRef(function InputField(
-  { label, icon: Icon, type = "text", error, isPassword, ...props },
+const FormField = forwardRef(function FormField(
+  { id, label, icon: Icon, error, className, children, ...props },
   ref,
 ) {
-  const [visible, setVisible] = useState(false);
-  const inputType = isPassword ? (visible ? "text" : "password") : type;
+  const inputEl = children ?? (
+    <Input
+      id={id}
+      ref={ref}
+      aria-invalid={!!error}
+      aria-describedby={error ? `${id}-error` : undefined}
+      className={cn("h-11 rounded-xl text-sm", Icon && "pl-9", className)}
+      {...props}
+    />
+  );
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-[11px] font-semibold tracking-[0.15em] text-neutral-800 uppercase">
-        {label}
-      </label>
-      <div
-        className={`input-focus flex items-center gap-3 px-4 h-[52px] rounded-2xl border transition-all ${
-          error
-            ? "border-red-400 bg-red-50/40"
-            : "border-neutral-200 bg-white hover:border-neutral-300"
-        }`}
+    <div className="flex flex-col gap-1.5">
+      <Label
+        htmlFor={id}
+        className="text-[10px] font-semibold tracking-[0.15em] uppercase text-neutral-800"
       >
+        {label}
+      </Label>
+      <div className="relative">
         {Icon && (
           <Icon
-            className="w-[18px] h-[18px] text-neutral-400 shrink-0"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 pointer-events-none"
             strokeWidth={1.8}
+            aria-hidden="true"
           />
         )}
-        <input
-          ref={ref}
-          type={inputType}
-          className="flex-1 bg-transparent outline-none text-[15px] text-neutral-900 placeholder:text-neutral-400"
-          {...props}
-        />
-        {isPassword && (
-          <button
-            type="button"
-            onClick={() => setVisible((v) => !v)}
-            className="text-neutral-400 hover:text-neutral-700 transition-colors"
-            tabIndex={-1}
-          >
-            {visible ? (
-              <EyeOff className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            ) : (
-              <Eye className="w-[18px] h-[18px]" strokeWidth={1.8} />
-            )}
-          </button>
-        )}
+        {inputEl}
       </div>
-      {error && <p className="text-xs text-red-500 pl-1">{error}</p>}
+      {error && (
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className="text-[11px] text-destructive pl-1"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 });
 
-export default InputField;
+export default FormField;
+</file>
+
+<file path="components/features/auth/GoogleButton.js">
+"use client";
+
+import { Button } from "@/components/ui/button";
+
+const GoogleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+    <path
+      fill="#EA4335"
+      d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+    />
+    <path
+      fill="#4285F4"
+      d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+    />
+    <path
+      fill="#34A853"
+      d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+    />
+  </svg>
+);
+
+export default function GoogleButton({
+  children = "Continue with Google",
+  ...props
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="h-11 w-full rounded-xl bg-white border-neutral-200 hover:bg-neutral-50 font-medium text-xs tracking-[0.1em] uppercase text-neutral-800 gap-2"
+      {...props}
+    >
+      <GoogleIcon />
+      {children}
+    </Button>
+  );
+}
 </file>
 
 <file path="components/features/auth/LoadingSpinner.js">
@@ -852,63 +1307,6 @@ import { Loader2 } from "lucide-react";
 export default function LoadingSpinner({ className = "w-4 h-4" }) {
   return <Loader2 className={`${className} animate-spin`} />;
 }
-</file>
-
-<file path="components/features/auth/LuxuryLogo.js">
-"use client";
-
-import { motion } from "framer-motion";
-import { Watch } from "lucide-react";
-
-export default function LuxuryLogo({ size = "md" }) {
-  const sizes = {
-    sm: {
-      ring: "w-10 h-10",
-      icon: "w-5 h-5",
-      title: "text-xl",
-      sub: "text-[9px]",
-    },
-    md: {
-      ring: "w-14 h-14",
-      icon: "w-7 h-7",
-      title: "text-3xl",
-      sub: "text-[10px]",
-    },
-    lg: {
-      ring: "w-20 h-20",
-      icon: "w-10 h-10",
-      title: "text-4xl",
-      sub: "text-xs",
-    },
-  };
-  const s = sizes[size];
-
-  return (
-    <div className="flex items-center gap-4">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-        className={`${s.ring} rounded-full border-2 border-[#C9A14A] flex items-center justify-center`}
-      >
-        <Watch className={`${s.icon} text-[#C9A14A]`} strokeWidth={1.5} />
-      </motion.div>
-      <div>
-        <h1
-          className={`font-serif ${s.title} font-bold tracking-[0.15em] text-white`}
-        >
-          TIME AURA
-        </h1>
-        <p className={`${s.sub} tracking-[0.25em] text-white/70 mt-1`}>
-          TIMELESS STYLE. PRECISION YOU TRUST.
-        </p>
-      </div>
-    </div>
-  );
-}
-</file>
-
-<file path="components/features/auth/PageTransition.js">
-
 </file>
 
 <file path="components/features/auth/PasswordInput.js">
@@ -929,20 +1327,20 @@ const PasswordInput = forwardRef(function PasswordInput(
       <Input
         ref={ref}
         type={visible ? "text" : "password"}
-        className={cn("pr-10", className)}
+        className={cn("h-11 rounded-xl text-sm pr-9", className)}
         {...props}
       />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors"
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors"
         tabIndex={-1}
         aria-label={visible ? "Hide password" : "Show password"}
       >
         {visible ? (
-          <EyeOff className="w-[18px] h-[18px]" strokeWidth={1.8} />
+          <EyeOff className="w-4 h-4" strokeWidth={1.8} />
         ) : (
-          <Eye className="w-[18px] h-[18px]" strokeWidth={1.8} />
+          <Eye className="w-4 h-4" strokeWidth={1.8} />
         )}
       </button>
     </div>
@@ -950,6 +1348,104 @@ const PasswordInput = forwardRef(function PasswordInput(
 });
 
 export default PasswordInput;
+</file>
+
+<file path="components/features/legal/LegalLayout.js">
+"use client";
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowLeft, Watch } from "lucide-react";
+
+export default function LegalLayout({ title, lastUpdated, children }) {
+  return (
+    <div className="min-h-screen w-full bg-[#FAFAFA] text-neutral-800">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-[#FAFAFA]/90 backdrop-blur border-b border-neutral-200">
+        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-2 group"
+            aria-label="Time Aura home"
+          >
+            <div className="w-9 h-9 rounded-full border-2 border-[#800020] flex items-center justify-center group-hover:bg-[#800020]/5 transition-colors">
+              <Watch className="w-4 h-4 text-[#800020]" strokeWidth={1.8} />
+            </div>
+            <span className="font-serif text-lg font-bold tracking-[0.15em] text-[#5c0016]">
+              TIME AURA
+            </span>
+          </Link>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-1.5 text-sm text-neutral-600 hover:text-[#800020] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+            Back
+          </Link>
+        </div>
+      </header>
+
+      {/* Content */}
+      <motion.article
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="max-w-3xl mx-auto px-6 py-12 lg:py-16"
+      >
+        <header className="mb-10">
+          <h1 className="font-serif text-4xl lg:text-5xl font-bold text-[#5c0016] tracking-wide uppercase">
+            {title}
+          </h1>
+          <div className="w-14 h-[3px] bg-[#C9A14A] mt-4" aria-hidden="true" />
+          {lastUpdated && (
+            <p className="mt-4 text-sm text-neutral-500">
+              Last updated:{" "}
+              <time dateTime={lastUpdated}>
+                {new Date(lastUpdated).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+            </p>
+          )}
+        </header>
+
+        <div className="legal-prose space-y-8 text-[15px] leading-7 text-neutral-700">
+          {children}
+        </div>
+
+        <footer className="mt-16 pt-8 border-t border-neutral-200 text-sm text-neutral-500">
+          <p>
+            Questions? Contact us at{" "}
+            <a
+              href="mailto:timeaura.online@gmail.com"
+              className="text-[#C9A14A] font-medium hover:underline"
+            >
+              timeaura.online@gmail.com
+            </a>
+          </p>
+        </footer>
+      </motion.article>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/legal/LegalSection.js">
+export default function LegalSection({ number, title, children }) {
+  return (
+    <section aria-labelledby={`section-${number}`}>
+      <h2
+        id={`section-${number}`}
+        className="font-serif text-xl lg:text-2xl font-semibold text-[#5c0016] mb-3"
+      >
+        {number}. {title}
+      </h2>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
 </file>
 
 <file path="components/features/PageTransition.js">
@@ -967,6 +1463,44 @@ export default function PageTransition({ children }) {
     >
       {children}
     </motion.div>
+  );
+}
+</file>
+
+<file path="components/providers/QueryProvider.js">
+"use client";
+
+import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+export default function QueryProvider({ children }) {
+  // useState ensures the client is created ONCE per browser session,
+  // never re-created on re-renders (which would wipe the cache).
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 min — don't refetch aggressively
+            gcTime: 5 * 60 * 1000, // 5 min in-memory retention
+            refetchOnWindowFocus: false, // luxury feel: no jitter on tab focus
+            retry: 1,
+          },
+          mutations: {
+            retry: 0, // never auto-retry POSTs
+          },
+        },
+      }),
+  );
+
+  return (
+    <QueryClientProvider client={client}>
+      {children}
+      {process.env.NODE_ENV === "development" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
+    </QueryClientProvider>
   );
 }
 </file>
@@ -1255,66 +1789,64 @@ const Toaster = ({
 export { Toaster }
 </file>
 
-<file path="components/ui/Toast.js">
+<file path="hooks/useAuth.js">
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { authApi } from "@/lib/api";
 
-const ToastContext = createContext(null);
+// Query key registry — single source of truth
+export const authKeys = {
+  me: ["auth", "me"],
+};
 
-export function ToastProvider({ children }) {
-  const [toasts, setToasts] = useState([]);
-
-  const push = useCallback((toast) => {
-    const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, ...toast }]);
-    setTimeout(() => {
-      setToasts((t) => t.filter((x) => x.id !== id));
-    }, 4000);
-  }, []);
-
-  const api = {
-    success: (message) => push({ type: "success", message }),
-    error: (message) => push({ type: "error", message }),
-  };
-
-  return (
-    <ToastContext.Provider value={api}>
-      {children}
-      <div className="fixed top-6 right-6 z-100 flex flex-col gap-3">
-        <AnimatePresence>
-          {toasts.map((t) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 60 }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg min-w-70 max-w-sm ${
-                t.type === "success"
-                  ? "bg-white border border-emerald-200"
-                  : "bg-white border border-red-200"
-              }`}
-            >
-              {t.type === "success" ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              ) : (
-                <XCircle className="w-5 h-5 text-red-600 shrink-0" />
-              )}
-              <p className="text-sm text-neutral-800">{t.message}</p>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </ToastContext.Provider>
-  );
+/**
+ * Cached current user. Runs once per session; other components read from cache.
+ * This is the real "don't exhaust the server" win.
+ */
+export function useCurrentUser({ enabled = true } = {}) {
+  return useQuery({
+    queryKey: authKeys.me,
+    queryFn: authApi.me,
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 min — user data rarely changes mid-session
+    retry: false,
+  });
 }
 
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used inside ToastProvider");
-  return ctx;
+/**
+ * POST /auth/register — mutation, cannot be cached.
+ * Consistent loading/error state via TanStack.
+ */
+export function useRegister() {
+  return useMutation({
+    mutationFn: authApi.register,
+  });
+}
+
+/**
+ * POST /auth/login — mutation. On success, seed the /me cache
+ * with the returned user so no extra GET /me is needed.
+ */
+export function useLogin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: authApi.login,
+    onSuccess: (res) => {
+      if (res?.data?.user) {
+        qc.setQueryData(authKeys.me, { data: { user: res.data.user } });
+      }
+    },
+  });
+}
+
+/**
+ * POST /auth/verify-email — mutation.
+ */
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: authApi.verifyEmail,
+  });
 }
 </file>
 
@@ -1322,11 +1854,25 @@ export function useToast() {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
-async function request(path, { method = "GET", body, headers = {} } = {}) {
+function getAccessToken() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("accessToken");
+}
+
+async function request(
+  path,
+  { method = "GET", body, headers = {}, auth = false } = {},
+) {
+  const finalHeaders = { "Content-Type": "application/json", ...headers };
+  if (auth) {
+    const token = getAccessToken();
+    if (token) finalHeaders.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: finalHeaders,
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -1352,17 +1898,14 @@ export const authApi = {
 
   // POST /api/v1/auth/login  body: { email, password }
   login: ({ email, password }) =>
-    request("/auth/login", {
-      method: "POST",
-      body: { email, password },
-    }),
+    request("/auth/login", { method: "POST", body: { email, password } }),
 
   // POST /api/v1/auth/verify-email  body: { email, code }
   verifyEmail: ({ email, code }) =>
-    request("/auth/verify-email", {
-      method: "POST",
-      body: { email, code },
-    }),
+    request("/auth/verify-email", { method: "POST", body: { email, code } }),
+
+  // GET /api/v1/auth/me  (requires Bearer token)
+  me: () => request("/auth/me", { auth: true }),
 };
 </file>
 
@@ -1630,6 +2173,8 @@ export default nextConfig;
     "@hugeicons/react": "^1.1.9",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query-devtools": "^5.101.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",

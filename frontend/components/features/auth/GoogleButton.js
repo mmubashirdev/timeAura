@@ -1,9 +1,15 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
+import { useGoogleLogin } from "@/hooks/useAuth";
 
 const GoogleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
     <path
       fill="#EA4335"
       d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -25,17 +31,80 @@ const GoogleIcon = () => (
 
 export default function GoogleButton({
   children = "Continue with Google",
+  redirectTo = "/dashboard",
   ...props
 }) {
+  const router = useRouter();
+  const { signIn, ready, configured } = useGoogleSignIn();
+  const googleMutation = useGoogleLogin();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const busy = isProcessing || googleMutation.isPending;
+
+  const handleClick = async () => {
+    if (!configured) {
+      toast.error("Google sign-in unavailable", {
+        description:
+          "NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured. Contact support.",
+      });
+      return;
+    }
+    if (!ready) {
+      toast.error("Google is still loading. Please try again in a moment.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const { idToken } = await signIn();
+
+      // Contract: POST /auth/google  body: { idToken }
+      googleMutation.mutate(
+        { idToken },
+        {
+          onSuccess: (res) => {
+            if (res?.data?.accessToken) {
+              localStorage.setItem("accessToken", res.data.accessToken);
+            }
+            toast.success("Welcome", { description: "Signed in with Google." });
+            router.push(redirectTo);
+          },
+          onError: (err) => {
+            toast.error("Google sign-in failed", {
+              description: err.message || "Please try again.",
+            });
+          },
+          onSettled: () => setIsProcessing(false),
+        },
+      );
+    } catch (err) {
+      setIsProcessing(false);
+      // Don't toast if the user simply cancelled — noisy UX
+      if (!/cancel/i.test(err.message)) {
+        toast.error("Google sign-in failed", { description: err.message });
+      }
+    }
+  };
+
   return (
     <Button
       type="button"
       variant="outline"
-      className="h-[48px] w-full rounded-2xl bg-white border-neutral-200 hover:bg-neutral-50 font-medium text-sm tracking-[0.1em] uppercase text-neutral-800 gap-3"
+      onClick={handleClick}
+      disabled={busy}
+      className="h-11 w-full rounded-xl bg-white border-neutral-200 hover:bg-neutral-50 font-medium text-xs tracking-[0.1em] uppercase text-neutral-800 gap-2"
       {...props}
     >
-      <GoogleIcon />
-      {children}
+      {busy ? (
+        <>
+          <LoadingSpinner /> Connecting...
+        </>
+      ) : (
+        <>
+          <GoogleIcon />
+          {children}
+        </>
+      )}
     </Button>
   );
 }
