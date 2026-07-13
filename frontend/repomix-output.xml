@@ -41,13 +41,27 @@ The content is organized as follows:
 
 <directory_structure>
 app/
+  _components/
+    ReducedMotion.js
+  about/
+    page.js
+  dashboard/
+    page.js
+  forgot-password/
+    page.js
   login/
     page.js
   privacy/
     page.js
+  reset-password/
+    new/
+      page.js
+    page.js
   signup/
     page.js
   terms/
+    page.js
+  verify-email/
     page.js
   favicon.ico
   globals.css
@@ -55,6 +69,14 @@ app/
   page.js
 components/
   features/
+    about/
+      AboutHero.jsx
+      AboutTestimonials.jsx
+      CtaBanner.jsx
+      Differentiators.jsx
+      HowItWorks.jsx
+      OurStory.jsx
+      Stats.jsx
     auth/
       AuthDivider.js
       AuthLayout.js
@@ -62,6 +84,16 @@ components/
       GoogleButton.js
       LoadingSpinner.js
       PasswordInput.js
+    landing/
+      AnnouncementBar.jsx
+      BestSellers.jsx
+      Categories.jsx
+      Footer.jsx
+      Hero.jsx
+      Navbar.jsx
+      PerksBanner.jsx
+      ScrollFlyAnimator.jsx
+      Testimonials.jsx
     legal/
       LegalLayout.js
       LegalSection.js
@@ -77,18 +109,44 @@ components/
     sonner.jsx
 hooks/
   useAuth.js
+  useGoogleSignIn.js
+  useResendCountdown.js
 lib/
   api.js
   utils.js
   validations.js
 public/
   images/
+    products/
+      hero-composition.png
+      hero-products.png
+      our-story.jpg
+      perfume.png
+      review-avatar-1.jpg
+      review-avatar-2.jpg
+      review-avatar-3.jpg
+      wallet.png
+      watch.png
+    time-products/
+      perfume 2.jpg
+      perfume1.jpg
+      perfume3.jpg
+      perfume4.jpg
+      perfume5.jpg
+      perfumes6.jpg
+      wallet 5.jpg
+      wallet1.jpg
+      wallet2.jpg
+      wallet3.jpg
+      wallet4.jpg
+      watch 2.jpg
+      watch 3.jpg
+      watch 7.jpg
+      watch hero .jpg
+      watch1.jpg
+      watch5.jpg
+      watch6.jpg
     hero-luxury.jpeg
-  file.svg
-  globe.svg
-  next.svg
-  vercel.svg
-  window.svg
 .dockerignore
 .gitignore
 AGENTS.md
@@ -105,6 +163,237 @@ README.md
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="app/_components/ReducedMotion.js">
+"use client";
+
+export function ReducedMotion({ children }) {
+  // lightweight client-side hook to respect user preference
+  return <div className="reduced-motion">{children}</div>;
+}
+</file>
+
+<file path="app/about/page.js">
+import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
+import Navbar from "@/components/features/landing/Navbar";
+import Footer from "@/components/features/landing/Footer";
+
+import AboutHero from "@/components/features/about/AboutHero";
+import OurStory from "@/components/features/about/OurStory";
+import Differentiators from "@/components/features/about/Differentiators";
+import Stats from "@/components/features/about/Stats";
+import HowItWorks from "@/components/features/about/HowItWorks";
+import AboutTestimonials from "@/components/features/about/AboutTestimonials";
+import CtaBanner from "@/components/features/about/CtaBanner";
+
+export const metadata = {
+  title: "About Us — Time Aura",
+  description:
+    "Time Aura is a curated marketplace connecting you with authentic premium products from trusted brands and verified sellers.",
+};
+
+export default function AboutPage() {
+  return (
+    <main className="w-full bg-[#FAFAFA] text-neutral-900 overflow-x-hidden">
+      <AnnouncementBar />
+      <Navbar />
+      <AboutHero />
+      <OurStory />
+      <Differentiators />
+      <Stats />
+      <HowItWorks />
+      <AboutTestimonials />
+      <CtaBanner />
+      <Footer />
+    </main>
+  );
+}
+</file>
+
+<file path="app/dashboard/page.js">
+import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
+import Navbar from "@/components/features/landing/Navbar";
+import Hero from "@/components/features/landing/Hero";
+import Categories from "@/components/features/landing/Categories";
+import BestSellers from "@/components/features/landing/BestSellers";
+import Testimonials from "@/components/features/landing/Testimonials";
+import PerksBanner from "@/components/features/landing/PerksBanner";
+import Footer from "@/components/features/landing/Footer";
+import ScrollFlyAnimator from "@/components/features/landing/ScrollFlyAnimator";
+
+export const metadata = {
+  title: "Time Aura — SHOP PREMIUM. SHOP SMART. Moments, Made for You",
+  description:
+    "Premium watches, wallets, and perfumes — where sophistication meets timeless style.",
+};
+
+export default function HomePage() {
+  return (
+    <main className="w-full bg-[#FAFAFA] text-neutral-900 overflow-x-hidden">
+      <AnnouncementBar />
+      <Navbar />
+      <Hero />
+      <Categories />
+      <BestSellers />
+      <Testimonials />
+      <PerksBanner />
+      <Footer />
+
+      {/* Client-only, mounts after DOM is ready.
+          Handles the watch/wallet/perfume fly animation. */}
+      <ScrollFlyAnimator />
+    </main>
+  );
+}
+</file>
+
+<file path="app/forgot-password/page.js">
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Mail, Lock, ArrowLeft, ShieldCheck } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import AuthLayout from "@/components/features/auth/AuthLayout";
+import FormField from "@/components/features/auth/FormField";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+
+import { forgotPasswordSchema } from "@/lib/validations";
+import { useForgotPassword } from "@/hooks/useAuth";
+
+export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const [sent, setSent] = useState(false);
+  const forgotMutation = useForgotPassword();
+
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    mode: "onBlur",
+    defaultValues: { email: "" },
+  });
+
+  const onSubmit = (values) => {
+    // Contract: POST /auth/forgot-password  body: { email }
+    forgotMutation.mutate(
+      { email: values.email },
+      {
+        onSuccess: () => {
+          setSent(true);
+          toast.success("Check your email", {
+            description:
+              "If an account exists, a 6-digit reset code has been sent.",
+          });
+          // Take the user to the reset-password screen with email prefilled
+          setTimeout(() => {
+            router.push(
+              `/reset-password?email=${encodeURIComponent(values.email)}`,
+            );
+          }, 1200);
+        },
+        onError: (err) => {
+          toast.error("Something went wrong", {
+            description: err.message || "Please try again shortly.",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <AuthLayout>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col"
+      >
+        {/* Icon */}
+        <div className="w-14 h-14 rounded-full bg-[#800020]/10 flex items-center justify-center self-center mb-4">
+          <Lock className="w-6 h-6 text-[#800020]" strokeWidth={1.8} />
+        </div>
+
+        <header className="text-center mb-6">
+          <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
+            Reset Your Password
+          </h1>
+          <div
+            className="w-14 h-[3px] bg-[#C9A14A] mt-2 mb-3 mx-auto"
+            aria-hidden="true"
+          />
+          <p className="text-neutral-600 text-sm">
+            Enter your email address and we&apos;ll send you a 6-digit code to
+            reset your password.
+          </p>
+        </header>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          <FormField
+            id="email"
+            label="Email Address"
+            icon={Mail}
+            type="email"
+            autoComplete="email"
+            placeholder="Enter your email address"
+            error={errors.email?.message}
+            {...register("email")}
+          />
+
+          <Button
+            type="submit"
+            disabled={forgotMutation.isPending || sent}
+            className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
+          >
+            {forgotMutation.isPending ? (
+              <span className="flex items-center gap-2">
+                <LoadingSpinner /> Sending...
+              </span>
+            ) : sent ? (
+              "Code Sent ✓"
+            ) : (
+              "Send Reset Code"
+            )}
+          </Button>
+
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center gap-1.5 text-sm text-neutral-600 hover:text-[#800020] transition-colors mt-2"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+            Back to Login
+          </Link>
+        </form>
+
+        {/* Reassurance banner */}
+        <div className="mt-6 flex items-start gap-3 p-3 rounded-xl bg-neutral-100/70 border border-neutral-200/60">
+          <ShieldCheck
+            className="w-4 h-4 text-[#C9A14A] shrink-0 mt-0.5"
+            strokeWidth={1.8}
+          />
+          <p className="text-xs text-neutral-600 leading-relaxed">
+            We&apos;ll never share your email with anyone. Your security is our
+            priority.
+          </p>
+        </div>
+      </motion.div>
+    </AuthLayout>
+  );
+}
+</file>
 
 <file path="app/login/page.js">
 "use client";
@@ -429,6 +718,394 @@ export default function PrivacyPage() {
 }
 </file>
 
+<file path="app/reset-password/new/page.js">
+"use client";
+
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Lock, ArrowLeft, ShieldCheck } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import AuthLayout from "@/components/features/auth/AuthLayout";
+import FormField from "@/components/features/auth/FormField";
+import PasswordInput from "@/components/features/auth/PasswordInput";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+
+import { newPasswordSchema } from "@/lib/validations";
+import { useResetPassword } from "@/hooks/useAuth";
+
+function NewPasswordContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "";
+  const code = searchParams.get("code") || "";
+
+  const resetMutation = useResetPassword();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(newPasswordSchema),
+    mode: "onBlur",
+    defaultValues: { newPassword: "", confirmPassword: "" },
+  });
+
+  // Guard: if the user landed here directly without a code, bounce them to step 1
+  useEffect(() => {
+    if (!email || code.length !== 6) {
+      toast.error("Missing information", {
+        description: "Please enter your reset code first.",
+      });
+      router.replace("/reset-password");
+    }
+  }, [email, code, router]);
+
+  const onSubmit = (values) => {
+    // Contract: POST /auth/reset-password  body: { email, code, newPassword }
+    // The code is validated by the backend as part of this call — if it's
+    // wrong here, we send the user back to step 1 to re-enter it.
+    resetMutation.mutate(
+      { email, code, newPassword: values.newPassword },
+      {
+        onSuccess: () => {
+          toast.success("Password reset", {
+            description: "Sign in with your new password.",
+          });
+          router.push("/login");
+        },
+        onError: (err) => {
+          toast.error("Reset failed", {
+            description:
+              err.message ||
+              "The code may be invalid or expired. Please try again.",
+          });
+          // Wrong/expired code → back to step 1 with email preserved
+          if (err.status === 401 || err.status === 403) {
+            router.replace(
+              `/reset-password?email=${encodeURIComponent(email)}`,
+            );
+          }
+        },
+      },
+    );
+  };
+
+  return (
+    <AuthLayout>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col"
+      >
+        <div className="w-14 h-14 rounded-full bg-[#800020]/10 flex items-center justify-center self-center mb-4">
+          <Lock className="w-6 h-6 text-[#800020]" strokeWidth={1.8} />
+        </div>
+
+        <header className="text-center mb-6">
+          <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
+            Set New Password
+          </h1>
+          <div
+            className="w-14 h-[3px] bg-[#C9A14A] mt-2 mb-3 mx-auto"
+            aria-hidden="true"
+          />
+          <p className="text-neutral-600 text-sm">
+            Choose a strong password for{" "}<br></br>
+            <span className="font-semibold text-neutral-800 break-all">
+              {email}
+            </span>
+          </p>
+        </header>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          <FormField
+            id="newPassword"
+            label="New Password"
+            icon={Lock}
+            error={errors.newPassword?.message}
+          >
+            <PasswordInput
+              id="newPassword"
+              autoComplete="new-password"
+              placeholder="At least 8 characters"
+              className="pl-9"
+              aria-invalid={!!errors.newPassword}
+              {...register("newPassword")}
+            />
+          </FormField>
+
+          <FormField
+            id="confirmPassword"
+            label="Confirm Password"
+            icon={Lock}
+            error={errors.confirmPassword?.message}
+          >
+            <PasswordInput
+              id="confirmPassword"
+              autoComplete="new-password"
+              placeholder="Re-enter your new password"
+              className="pl-9"
+              aria-invalid={!!errors.confirmPassword}
+              {...register("confirmPassword")}
+            />
+          </FormField>
+
+          <Button
+            type="submit"
+            disabled={resetMutation.isPending}
+            className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
+          >
+            {resetMutation.isPending ? (
+              <span className="flex items-center gap-2">
+                <LoadingSpinner /> Resetting...
+              </span>
+            ) : (
+              "Reset Password"
+            )}
+          </Button>
+
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center gap-1.5 text-sm text-neutral-600 hover:text-[#800020] transition-colors mt-1"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+            Back to Login
+          </Link>
+        </form>
+
+        <div className="mt-6 flex items-start gap-3 p-3 rounded-xl bg-neutral-100/70 border border-neutral-200/60">
+          <ShieldCheck
+            className="w-4 h-4 text-[#C9A14A] shrink-0 mt-0.5"
+            strokeWidth={1.8}
+          />
+          <p className="text-xs text-neutral-600 leading-relaxed">
+            After resetting, all existing sessions will be signed out.
+            You&apos;ll need to sign in again on every device.
+          </p>
+        </div>
+      </motion.div>
+    </AuthLayout>
+  );
+}
+
+export default function NewPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewPasswordContent />
+    </Suspense>
+  );
+}
+</file>
+
+<file path="app/reset-password/page.js">
+"use client";
+
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { ArrowLeft, KeyRound, Mail } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+
+import AuthLayout from "@/components/features/auth/AuthLayout";
+
+import { resetCodeSchema } from "@/lib/validations";
+import { useForgotPassword } from "@/hooks/useAuth";
+import { useResendCountdown } from "@/hooks/useResendCountdown";
+
+function ResetPasswordStepOne() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "";
+
+  const forgotMutation = useForgotPassword();
+  const { start, canResend, formatted } = useResendCountdown(60);
+
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(resetCodeSchema),
+    mode: "onSubmit",
+    defaultValues: { code: "" },
+  });
+
+  // Guard: no email in URL → send them back to request a code
+  useEffect(() => {
+    if (!email) {
+      toast.error("Missing email", {
+        description: "Please request a reset code first.",
+      });
+      router.replace("/forgot-password");
+      return;
+    }
+    // Kick off the initial 60s cooldown — user just received the email
+    start();
+  }, [email, router, start]);
+
+  const onSubmit = (values) => {
+    // No API call here — code is validated in step 2 as part of the atomic
+    // /auth/reset-password call. We just hand both values to step 2.
+    const params = new URLSearchParams({ email, code: values.code });
+    router.push(`/reset-password/new?${params.toString()}`);
+  };
+
+  const handleResend = () => {
+    if (!canResend || forgotMutation.isPending) return;
+    // Contract: POST /auth/forgot-password  body: { email }
+    forgotMutation.mutate(
+      { email },
+      {
+        onSuccess: () => {
+          toast.success("Code sent", {
+            description: "Check your inbox for a new 6-digit code.",
+          });
+          start();
+        },
+        onError: (err) => {
+          toast.error("Could not resend code", {
+            description: err.message || "Please try again shortly.",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <AuthLayout>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col"
+      >
+        <div className="w-14 h-14 rounded-full bg-[#800020]/10 flex items-center justify-center self-center mb-4">
+          <KeyRound className="w-6 h-6 text-[#800020]" strokeWidth={1.8} />
+        </div>
+
+        <header className="text-center mb-5">
+          <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
+            Enter Reset Code
+          </h1>
+          <div
+            className="w-14 h-[3px] bg-[#C9A14A] mt-2 mb-3 mx-auto"
+            aria-hidden="true"
+          />
+          <p className="text-neutral-600 text-sm">
+            We&apos;ve sent a 6-digit code to
+          </p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-neutral-900 break-all">
+            <Mail className="w-4 h-4 text-[#C9A14A]" strokeWidth={1.8} />
+            {email}
+          </p>
+        </header>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          {/* OTP — centered, no email field */}
+          <div className="flex flex-col gap-2 items-center">
+            <Controller
+              name="code"
+              control={control}
+              render={({ field }) => (
+                <InputOTP
+                  maxLength={6}
+                  value={field.value}
+                  onChange={field.onChange}
+                  aria-label="6-digit reset code"
+                >
+                  <InputOTPGroup className="gap-2">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <InputOTPSlot
+                        key={i}
+                        index={i}
+                        className="w-11 h-12 text-lg font-semibold rounded-lg border border-neutral-200 bg-white"
+                      />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
+              )}
+            />
+            {errors.code && (
+              <p role="alert" className="text-[11px] text-destructive">
+                {errors.code.message}
+              </p>
+            )}
+          </div>
+
+          {/* Resend */}
+          <p className="text-xs text-neutral-600 text-center">
+            Didn&apos;t receive the code?{" "}
+            {canResend ? (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={forgotMutation.isPending}
+                className="text-[#C9A14A] font-semibold hover:underline disabled:opacity-50"
+              >
+                {forgotMutation.isPending ? "Sending..." : "Resend Code"}
+              </button>
+            ) : (
+              <span className="text-[#C9A14A] font-semibold">
+                Resend in {formatted}
+              </span>
+            )}
+          </p>
+
+          <Button
+            type="submit"
+            className="mt-1 h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
+          >
+            Continue
+          </Button>
+
+          <Link
+            href="/forgot-password"
+            className="inline-flex items-center justify-center gap-1.5 text-sm text-neutral-600 hover:text-[#800020] transition-colors mt-1"
+          >
+            <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+            Use a different email
+          </Link>
+        </form>
+      </motion.div>
+    </AuthLayout>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordStepOne />
+    </Suspense>
+  );
+}
+</file>
+
 <file path="app/signup/page.js">
 "use client";
 
@@ -498,7 +1175,7 @@ export default function SignupPage() {
 
   return (
     <AuthLayout>
-      <header className="mb-4">
+      <header className="mb-3 mt-5">
         <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide uppercase">
           Create Your Account
         </h1>
@@ -798,6 +1475,213 @@ export default function TermsPage() {
 }
 </file>
 
+<file path="app/verify-email/page.js">
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { MailCheck, ArrowLeft } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+
+import AuthLayout from "@/components/features/auth/AuthLayout";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+
+import { useVerifyEmail, useResendVerification } from "@/hooks/useAuth";
+import { useResendCountdown } from "@/hooks/useResendCountdown";
+
+function VerifyEmailContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "";
+
+  const [code, setCode] = useState("");
+  const verifyMutation = useVerifyEmail();
+  const resendMutation = useResendVerification();
+  const { start, canResend, formatted } = useResendCountdown(60);
+
+  // Kick off the initial 60s cooldown when the page loads (user just got the email).
+  useEffect(() => {
+    start();
+  }, [start]);
+
+  // Guard: no email in URL → send them back to signup
+  useEffect(() => {
+    if (!email) {
+      toast.error("Missing email", {
+        description: "Please sign up again to receive a verification code.",
+      });
+      router.replace("/signup");
+    }
+  }, [email, router]);
+
+  const submitCode = (value) => {
+    // Contract: POST /auth/verify-email  body: { email, code }
+    verifyMutation.mutate(
+      { email, code: value },
+      {
+        onSuccess: () => {
+          toast.success("Email verified", {
+            description: "You can now sign in.",
+          });
+          router.push("/login");
+        },
+        onError: (err) => {
+          toast.error("Verification failed", {
+            description: err.message || "The code is invalid or expired.",
+          });
+          setCode(""); // clear so they can try again
+        },
+      },
+    );
+  };
+
+  const handleChange = (value) => {
+    setCode(value);
+    if (value.length === 6 && !verifyMutation.isPending) {
+      submitCode(value);
+    }
+  };
+
+  const handleResend = () => {
+    if (!canResend || resendMutation.isPending) return;
+    // Contract: POST /auth/resend-verification  body: { email }
+    resendMutation.mutate(
+      { email },
+      {
+        onSuccess: () => {
+          toast.success("Code sent", {
+            description: "Check your inbox for a new verification code.",
+          });
+          start();
+        },
+        onError: (err) => {
+          toast.error("Could not resend code", {
+            description: err.message || "Please try again shortly.",
+          });
+        },
+      },
+    );
+  };
+
+  return (
+    <AuthLayout>
+      {/* Back link */}
+      <div className="flex justify-end mb-4">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-1.5 text-sm text-neutral-600 hover:text-[#800020] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+          Back
+        </Link>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col items-center text-center"
+      >
+        {/* Icon */}
+        <div className="w-16 h-16 rounded-full bg-[#C9A14A]/15 flex items-center justify-center mb-4">
+          <MailCheck className="w-7 h-7 text-[#C9A14A]" strokeWidth={1.8} />
+        </div>
+
+        <h1 className="font-serif text-2xl xl:text-3xl font-bold text-[#5c0016] tracking-wide mb-2">
+          Verify Your Email
+        </h1>
+
+        <p className="text-sm text-neutral-600 mb-1">
+          We&apos;ve sent a 6-digit code to
+        </p>
+        <p className="text-sm font-semibold text-neutral-900 mb-6 break-all">
+          {email}
+        </p>
+
+        {/* OTP input */}
+        <div className="mb-3">
+          <InputOTP
+            maxLength={6}
+            value={code}
+            onChange={handleChange}
+            disabled={verifyMutation.isPending}
+            aria-label="6-digit verification code"
+          >
+            <InputOTPGroup className="gap-2">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <InputOTPSlot
+                  key={i}
+                  index={i}
+                  className="w-11 h-12 text-lg font-semibold rounded-lg border border-neutral-200 bg-white"
+                />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
+        </div>
+
+        {/* Resend */}
+        <p className="text-xs text-neutral-600 mb-5">
+          Didn&apos;t receive the code?{" "}
+          {canResend ? (
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resendMutation.isPending}
+              className="text-[#C9A14A] font-semibold hover:underline disabled:opacity-50"
+            >
+              {resendMutation.isPending ? "Sending..." : "Resend Code"}
+            </button>
+          ) : (
+            <span className="text-[#C9A14A] font-semibold">
+              Resend in {formatted}
+            </span>
+          )}
+        </p>
+
+        {/* Submit */}
+        <Button
+          type="button"
+          disabled={code.length !== 6 || verifyMutation.isPending}
+          onClick={() => submitCode(code)}
+          className="w-full h-11 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.15em] text-xs uppercase shadow-lg shadow-[#5c0016]/20"
+        >
+          {verifyMutation.isPending ? (
+            <span className="flex items-center gap-2">
+              <LoadingSpinner /> Verifying...
+            </span>
+          ) : (
+            "Verify & Continue"
+          )}
+        </Button>
+
+        <p className="text-[11px] text-neutral-500 mt-4 flex items-center gap-1.5">
+          <span className="w-1 h-1 rounded-full bg-neutral-400" />
+          Your information is secure with us
+        </p>
+      </motion.div>
+    </AuthLayout>
+  );
+}
+
+// useSearchParams must be wrapped in Suspense in Next.js App Router
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailContent />
+    </Suspense>
+  );
+}
+</file>
+
 <file path="app/globals.css">
 @import "tailwindcss";
 /* @import "tw-animate-css"; */
@@ -886,9 +1770,8 @@ export default function TermsPage() {
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  /* Allow layout containers to manage scrolling; prevents stray page scrollbars */
-  overflow: hidden;
+  min-height: 100%;
+  /* Let each page decide its own scrolling behavior */
   font-family: var(--font-inter), system-ui, sans-serif;
   background: var(--background);
   color: var(--foreground);
@@ -951,29 +1834,35 @@ html, body {
 .legal-prose a:hover {
   text-decoration: underline;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 </file>
 
 <file path="app/layout.js">
 import { Playfair_Display, Inter } from "next/font/google";
+import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
 import QueryProvider from "@/components/providers/QueryProvider";
 import "./globals.css";
 
 const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
+  /* ...unchanged */
 });
-
 const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  /* ...unchanged */
 });
 
 export const metadata = {
-  title: "Time Aura — Timeless Style. Precision You Trust.",
-  description: "Luxury watches, wallets and perfumes.",
+  /* ...unchanged */
 };
 
 export default function RootLayout({ children }) {
@@ -991,6 +1880,11 @@ export default function RootLayout({ children }) {
             }}
           />
         </QueryProvider>
+        {/* Google Identity Services — loaded once, available everywhere */}
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
@@ -998,69 +1892,619 @@ export default function RootLayout({ children }) {
 </file>
 
 <file path="app/page.js">
-import Image from "next/image";
+import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
+import Navbar from "@/components/features/landing/Navbar";
+import Hero from "@/components/features/landing/Hero";
+import Categories from "@/components/features/landing/Categories";
+import BestSellers from "@/components/features/landing/BestSellers";
+import Testimonials from "@/components/features/landing/Testimonials";
+import PerksBanner from "@/components/features/landing/PerksBanner";
+import Footer from "@/components/features/landing/Footer";
+import ScrollFlyAnimator from "@/components/features/landing/ScrollFlyAnimator";
 
-export default function Home() {
+export const metadata = {
+  title: "Time Aura — SHOP PREMIUM. SHOP SMART. Moments, Made for You",
+  description:
+    "Premium watches, wallets, and perfumes — where sophistication meets timeless style.",
+};
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="w-full bg-[#FAFAFA] text-neutral-900 overflow-x-hidden">
+      <AnnouncementBar />
+      <Navbar />
+      <Hero />
+      <Categories />
+      <BestSellers />
+      <Testimonials />
+      <PerksBanner />
+      <Footer />
+
+      {/* Client-only, mounts after DOM is ready.
+          Handles the watch/wallet/perfume fly animation. */}
+      <ScrollFlyAnimator />
+    </main>
+  );
+}
+</file>
+
+<file path="components/features/about/AboutHero.jsx">
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function AboutHero() {
+  return (
+    <section className="w-full bg-[#faf5f2]">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 items-center gap-10 py-14 lg:py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-4">
+            ABOUT TIME AURA
           </p>
+          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-neutral-900 mb-6">
+            Your Trusted Destination for Premium Lifestyle Products.
+          </h1>
+          <p className="text-neutral-600 text-base leading-relaxed max-w-md mb-8">
+            Time Aura is a curated marketplace connecting you with authentic
+            products from trusted brands and verified sellers. Shop confidently,
+            anytime, anywhere.
+          </p>
+
+          <div className="flex flex-wrap gap-3">
+            <Button className="h-12 px-6 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white text-sm font-semibold gap-2">
+              Explore Products <ArrowRight className="w-4 h-4" />
+            </Button>
+            <Link href="/contact">
+              <Button
+                variant="outline"
+                className="h-12 px-6 rounded-xl border-2 border-neutral-300 hover:border-[#800020] hover:text-[#800020] text-sm font-semibold"
+              >
+                Contact Us
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
+          className="relative aspect-[5/4] lg:aspect-[6/5] w-full"
+        >
+          <Image
+            src="/images/products/hero-products.png"
+            alt="Time Aura curated premium products"
+            fill
+            priority
+            className="object-cover rounded-2xl"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+          />
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/about/AboutTestimonials.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Star, BadgeCheck } from "lucide-react";
+
+const REVIEWS = [
+  {
+    text: "The selection is amazing and the quality is excellent. Time Aura has become my go-to shopping platform!",
+    name: "Ahmed ",
+    avatar: "/images/products/review-avatar-1.jpg",
+  },
+  {
+    text: "I love how easy it is to find authentic products from top brands. Fast delivery and great customer support too!",
+    name: "Sarah ",
+    avatar: "/images/products/review-avatar-2.jpg",
+  },
+  {
+    text: "Great prices, genuine products, and a smooth shopping experience. Highly recommended!",
+    name: "Abdullah",
+    avatar: "/images/products/review-avatar-3.jpg",
+  },
+];
+
+export default function AboutTestimonials() {
+  return (
+    <section className="w-full bg-[#FAFAFA] py-14">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="bg-[#faf5f2] rounded-2xl px-6 py-10">
+          <div className="text-center mb-8">
+            <h2 className="font-serif text-3xl lg:text-4xl text-neutral-900">
+              What Our Customers Say
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {REVIEWS.map((r, i) => (
+              <motion.article
+                key={r.name}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-white rounded-xl p-5 flex gap-4 items-start"
+              >
+                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-neutral-200 shrink-0">
+                  <Image
+                    src={r.avatar}
+                    alt={r.name}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex gap-0.5 text-[#C9A14A] mb-2">
+                    {Array.from({ length: 5 }).map((_, k) => (
+                      <Star key={k} className="w-3 h-3 fill-[#C9A14A]" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-neutral-700 leading-relaxed mb-3">
+                    &ldquo;{r.text}&rdquo;
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[#800020]">
+                      {r.name}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-neutral-500">
+                      <BadgeCheck
+                        className="w-3.5 h-3.5 text-[#C9A14A]"
+                        strokeWidth={1.8}
+                      />
+                      Verified Buyer
+                    </span>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/about/CtaBanner.jsx">
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function CtaBanner() {
+  return (
+    <section className="w-full bg-[#FAFAFA] pb-14">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="relative overflow-hidden rounded-2xl bg-[#5c0016] px-6 py-8 md:px-10 md:py-10 flex flex-col md:flex-row items-center gap-6 md:justify-between">
+          <div className="flex items-center gap-5">
+            {/* Two shopping bags illustration on the left */}
+            <div className="relative w-24 h-24 hidden md:block shrink-0">
+              <Image
+                src="/images/time-products/perfume5.jpg"
+                alt=""
+                fill
+                aria-hidden="true"
+                className="object-cover rounded-xl opacity-90"
+                sizes="96px"
+              />
+            </div>
+            <div className="text-white">
+              <h3 className="font-serif text-2xl lg:text-3xl mb-1">
+                Ready to Discover Something Amazing?
+              </h3>
+              <p className="text-xs md:text-sm text-white/80 max-w-md">
+                Explore premium products from trusted brands and enjoy a
+                shopping experience you can rely on.
+              </p>
+            </div>
+          </div>
+
+          <Link href="/#best-sellers">
+            <Button className="h-12 px-6 rounded-xl bg-white hover:bg-neutral-100 text-[#5c0016] text-sm font-semibold gap-2">
+              Explore Now <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/about/Differentiators.jsx">
+"use client";
+
+import { motion } from "framer-motion";
+import {
+  ShieldCheck,
+  Award,
+  Lock,
+  Truck,
+  RefreshCw,
+  Headphones,
+} from "lucide-react";
+
+const ITEMS = [
+  {
+    icon: ShieldCheck,
+    title: "Verified Sellers",
+    desc: "Every seller is carefully verified for trust and reliability.",
+  },
+  {
+    icon: Award,
+    title: "Authentic Products",
+    desc: "100% genuine products from trusted brands and sellers.",
+  },
+  {
+    icon: Lock,
+    title: "Secure Payments",
+    desc: "Safe and encrypted payments for complete peace of mind.",
+  },
+  {
+    icon: Truck,
+    title: "Fast Shipping",
+    desc: "Reliable and timely delivery to your doorstep.",
+  },
+  {
+    icon: RefreshCw,
+    title: "Easy Returns",
+    desc: "Hassle-free returns and exchanges made simple.",
+  },
+  {
+    icon: Headphones,
+    title: "Customer Support",
+    desc: "We're here to help you, whenever you need us.",
+  },
+];
+
+export default function Differentiators() {
+  return (
+    <section className="w-full bg-[#FAFAFA] py-14">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <h2 className="font-serif text-3xl lg:text-4xl text-neutral-900">
+            What Makes Time Aura Different?
+          </h2>
+          <div
+            className="w-14 h-[3px] bg-[#C9A14A] mx-auto mt-3"
+            aria-hidden="true"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          {ITEMS.map((it, i) => (
+            <motion.div
+              key={it.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: i * 0.06 }}
+              className="text-center flex flex-col items-center"
+            >
+              <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center mb-3">
+                <it.icon className="w-6 h-6 text-[#800020]" strokeWidth={1.8} />
+              </div>
+              <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+                {it.title}
+              </h3>
+              <p className="text-xs text-neutral-500 leading-relaxed max-w-[160px]">
+                {it.desc}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/about/HowItWorks.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Search, Heart, ShoppingBag, Truck, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const STEPS = [
+  {
+    icon: Search,
+    title: "Browse",
+    desc: "Explore thousands of products across multiple categories.",
+  },
+  {
+    icon: Heart,
+    title: "Choose",
+    desc: "Compare, read reviews, and choose your favorites.",
+  },
+  {
+    icon: ShoppingBag,
+    title: "Order",
+    desc: "Place your order securely with multiple payment options.",
+  },
+  {
+    icon: Truck,
+    title: "Receive",
+    desc: "Enjoy fast delivery right to your doorstep.",
+  },
+];
+
+export default function HowItWorks() {
+  return (
+    <section className="w-full bg-[#FAFAFA] py-14">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 items-center">
+        {/* Left: steps */}
+        <div>
+          <div className="text-center mb-10">
+            <h2 className="font-serif text-3xl lg:text-4xl text-neutral-900">
+              How It Works
+            </h2>
+            <div
+              className="w-14 h-[3px] bg-[#C9A14A] mx-auto mt-3"
+              aria-hidden="true"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+
+          <div className="relative grid grid-cols-4 gap-2">
+            {/* Dotted connector line */}
+            <div
+              className="hidden md:block absolute top-7 left-[12%] right-[12%] border-t-2 border-dotted border-[#800020]/30 z-0"
+              aria-hidden="true"
+            />
+
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="relative z-10 flex flex-col items-center text-center"
+              >
+                <div className="w-14 h-14 rounded-full bg-[#faf1ee] border border-[#f0dcd6] flex items-center justify-center mb-3">
+                  <step.icon
+                    className="w-6 h-6 text-[#800020]"
+                    strokeWidth={1.8}
+                  />
+                </div>
+                <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+                  {step.title}
+                </h3>
+                <p className="text-xs text-neutral-500 leading-relaxed px-1">
+                  {step.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+
+        {/* Right: curated shot + CTA */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="relative bg-[#faf5f2] rounded-2xl overflow-hidden"
+        >
+          <div className="relative aspect-[16/9] lg:aspect-auto lg:h-full grid grid-cols-[3fr_2fr] items-center">
+            <div className="relative h-full">
+              <Image
+                src="/images/time-products/perfume1.jpg"
+                alt="Curated Time Aura products"
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 40vw, 100vw"
+              />
+            </div>
+            <div className="p-6 lg:p-8">
+              <h3 className="font-serif text-xl lg:text-2xl text-neutral-900 leading-tight mb-2">
+                Curated. Trusted.
+                <br />
+                Loved by You.
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed mb-4">
+                Our goal is simple — to bring you the best products from trusted
+                brands, all in one seamless shopping experience.
+              </p>
+              <Button className="h-10 px-5 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white text-xs font-semibold gap-2">
+                Shop Now <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/about/OurStory.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Target, Eye } from "lucide-react";
+
+const PILLARS = [
+  {
+    icon: Target,
+    title: "Our Mission",
+    body: "To connect customers with authentic lifestyle products from trusted brands while providing a seamless, secure, and enjoyable shopping experience.",
+  },
+  {
+    icon: Eye,
+    title: "Our Vision",
+    body: "To become the most trusted marketplace for premium lifestyle products, loved by millions of customers worldwide.",
+  },
+];
+
+export default function OurStory() {
+  return (
+    <section className="w-full bg-[#FAFAFA] py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[minmax(0,320px)_1fr_1fr_1fr] gap-6 items-stretch">
+        {/* Image */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="relative aspect-square lg:aspect-auto lg:h-full rounded-2xl overflow-hidden"
+        >
+          <Image
+            src="/images/products/our-story.jpg"
+            alt="Customer unboxing a Time Aura package"
+            fill
+            className="object-cover"
+            sizes="(min-width: 1024px) 320px, 100vw"
+          />
+        </motion.div>
+
+        {/* Story text */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="flex flex-col justify-center"
+        >
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-3">
+            OUR STORY
+          </p>
+          <h2 className="font-serif text-3xl lg:text-4xl leading-tight text-neutral-900 mb-4">
+            Why We Created Time Aura
+          </h2>
+          <p className="text-sm text-neutral-600 leading-relaxed">
+            Shopping for premium products should be easy, reliable, and
+            enjoyable. We built Time Aura to bring the best of global brands and
+            trusted sellers together in one place. Our mission is to make
+            quality lifestyle shopping simple, transparent, and accessible for
+            everyone.
+          </p>
+        </motion.div>
+
+        {/* Mission + Vision cards */}
+        {PILLARS.map((p, i) => (
+          <motion.article
+            key={p.title}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2 + i * 0.1 }}
+            className="bg-[#faf1ee] rounded-2xl p-6 flex flex-col"
+          >
+            <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center mb-4">
+              <p.icon className="w-5 h-5 text-[#800020]" strokeWidth={1.8} />
+            </div>
+            <h3 className="font-serif text-xl text-neutral-900 mb-3">
+              {p.title}
+            </h3>
+            <p className="text-sm text-neutral-600 leading-relaxed">{p.body}</p>
+          </motion.article>
+        ))}
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/about/Stats.jsx">
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { motion, useInView, useMotionValue, animate } from "framer-motion";
+import { ShoppingBag, Store, Sparkles, Users } from "lucide-react";
+
+const STATS = [
+  {
+    icon: ShoppingBag,
+    value: 15000,
+    suffix: "+",
+    label: "Products",
+    format: shortK,
+  },
+  { icon: Store, value: 500, suffix: "+", label: "Trusted Sellers" },
+  { icon: Sparkles, value: 50, suffix: "+", label: "Popular Brands" },
+  {
+    icon: Users,
+    value: 100000,
+    suffix: "+",
+    label: "Happy Customers",
+    format: shortK,
+  },
+];
+
+function shortK(n) {
+  return n >= 1000 ? `${Math.round(n / 1000)}K` : `${Math.round(n)}`;
+}
+
+function CountUp({ to, format }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, amount: 0.5 });
+  const mv = useMotionValue(0);
+  const [display, setDisplay] = useState(format ? format(0) : "0");
+
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(mv, to, {
+      duration: 1.6,
+      ease: "easeOut",
+      onUpdate: (v) =>
+        setDisplay(format ? format(v) : Math.round(v).toString()),
+    });
+    return () => controls.stop();
+  }, [inView, to, format, mv]);
+
+  return <span ref={ref}>{display}</span>;
+}
+
+export default function Stats() {
+  return (
+    <section className="w-full bg-[#FAFAFA] pb-14">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="bg-[#faf1ee] rounded-2xl px-6 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+          {STATS.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="flex items-center gap-4 justify-center md:justify-start"
+            >
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0">
+                <s.icon className="w-5 h-5 text-[#800020]" strokeWidth={1.8} />
+              </div>
+              <div>
+                <div className="font-serif text-2xl lg:text-3xl text-neutral-900 leading-none">
+                  <CountUp to={s.value} format={s.format} />
+                  {s.suffix}
+                </div>
+                <div className="text-xs text-neutral-600 mt-1">{s.label}</div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 </file>
@@ -1069,7 +2513,7 @@ export default function Home() {
 export default function AuthDivider({ label = "OR" }) {
   return (
     <div
-      className="flex items-center gap-4 my-2"
+      className="flex items-center gap-4"
       role="separator"
       aria-label={label}
     >
@@ -1104,10 +2548,10 @@ export default function AuthLayout({ children }) {
             className="absolute inset-y-0 bg-cover bg-center"
             style={{
               backgroundImage: "url('/images/hero-luxury.jpeg')",
-              left: "20%", // pushes image left edge OFF-screen to the left
+              left: "55", // pushes image left edge OFF-screen to the left
               top:"10%",
               right: "0", // image extends to right edge
-              width: "90%", // image is 130% of container width
+              width: "70%", // image is 130% of container width
             }}
             role="img"
             aria-label="Time Aura — luxury watch, perfume and wallet"
@@ -1258,7 +2702,13 @@ export default FormField;
 <file path="components/features/auth/GoogleButton.js">
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
+import { useGoogleLogin } from "@/hooks/useAuth";
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -1283,17 +2733,80 @@ const GoogleIcon = () => (
 
 export default function GoogleButton({
   children = "Continue with Google",
+  redirectTo = "/dashboard",
   ...props
 }) {
+  const router = useRouter();
+  const { signIn, ready, configured } = useGoogleSignIn();
+  const googleMutation = useGoogleLogin();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const busy = isProcessing || googleMutation.isPending;
+
+  const handleClick = async () => {
+    if (!configured) {
+      toast.error("Google sign-in unavailable", {
+        description:
+          "NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured. Contact support.",
+      });
+      return;
+    }
+    if (!ready) {
+      toast.error("Google is still loading. Please try again in a moment.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const { idToken } = await signIn();
+
+      // Contract: POST /auth/google  body: { idToken }
+      googleMutation.mutate(
+        { idToken },
+        {
+          onSuccess: (res) => {
+            if (res?.data?.accessToken) {
+              localStorage.setItem("accessToken", res.data.accessToken);
+            }
+            toast.success("Welcome", { description: "Signed in with Google." });
+            router.push(redirectTo);
+          },
+          onError: (err) => {
+            toast.error("Google sign-in failed", {
+              description: err.message || "Please try again.",
+            });
+          },
+          onSettled: () => setIsProcessing(false),
+        },
+      );
+    } catch (err) {
+      setIsProcessing(false);
+      // Don't toast if the user simply cancelled — noisy UX
+      if (!/cancel/i.test(err.message)) {
+        toast.error("Google sign-in failed", { description: err.message });
+      }
+    }
+  };
+
   return (
     <Button
       type="button"
       variant="outline"
+      onClick={handleClick}
+      disabled={busy}
       className="h-11 w-full rounded-xl bg-white border-neutral-200 hover:bg-neutral-50 font-medium text-xs tracking-[0.1em] uppercase text-neutral-800 gap-2"
       {...props}
     >
-      <GoogleIcon />
-      {children}
+      {busy ? (
+        <>
+          <LoadingSpinner /> Connecting...
+        </>
+      ) : (
+        <>
+          <GoogleIcon />
+          {children}
+        </>
+      )}
     </Button>
   );
 }
@@ -1348,6 +2861,877 @@ const PasswordInput = forwardRef(function PasswordInput(
 });
 
 export default PasswordInput;
+</file>
+
+<file path="components/features/landing/AnnouncementBar.jsx">
+"use client";
+
+import { Truck } from "lucide-react";
+import { FaInstagram, FaFacebookF, FaYoutube } from "react-icons/fa";
+
+export default function AnnouncementBar() {
+  return (
+    <div className="w-full bg-[#5c0016] text-white text-xs">
+      <div className="max-w-7xl mx-auto px-6 h-10 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Truck className="w-3.5 h-3.5" strokeWidth={1.8} />
+          <span className="tracking-wide">
+            Free Worldwide Shipping on All Orders
+          </span>
+        </div>
+        <div className="hidden md:flex items-center gap-6">
+          <span>2 Year Warranty</span>
+          <span className="opacity-60">|</span>
+          <span>Easy Returns</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden md:inline">Follow Us</span>
+          <FaInstagram size={18} />
+          <FaFacebookF size={18} />
+          <FaYoutube size={18} />
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/landing/BestSellers.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { ShoppingCart, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const PRODUCTS = [
+  {
+    id: 1,
+    name: "TA Chrono Classic",
+    price: 199,
+    img: "/images/products/best-1.png",
+  },
+  {
+    id: 2,
+    name: "TA Leather Wallet",
+    price: 79,
+    img: "/images/products/best-2.png",
+  },
+  {
+    id: 3,
+    name: "Oud Prestige",
+    price: 129,
+    img: "/images/products/best-3.png",
+  },
+  {
+    id: 4,
+    name: "TA Heritage",
+    price: 179,
+    img: "/images/products/best-4.png",
+  },
+  {
+    id: 5,
+    name: "TA Bifold Wallet",
+    price: 69,
+    img: "/images/products/best-5.png",
+  },
+  {
+    id: 6,
+    name: "Noir Intense",
+    price: 119,
+    img: "/images/products/best-6.png",
+  },
+];
+
+export default function BestSellers() {
+  return (
+    <section id="best-sellers" className="w-full bg-[#FAFAFA] py-16">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-3">
+            BEST SELLERS
+          </p>
+          <h2 className="font-serif text-4xl text-neutral-900">
+            Trending Products
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {PRODUCTS.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              className="bg-white rounded-2xl p-4 border border-neutral-100 hover:shadow-lg transition-shadow group"
+            >
+              <div className="relative aspect-square mb-3 bg-neutral-50 rounded-xl overflow-hidden">
+                <Image
+                  src={p.img}
+                  alt={p.name}
+                  fill
+                  className="object-contain p-4 group-hover:scale-105 transition-transform"
+                  sizes="200px"
+                />
+              </div>
+              <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+                {p.name}
+              </h3>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-neutral-900">
+                  ${p.price}.00
+                </span>
+                <button className="w-8 h-8 rounded-lg border border-[#800020]/20 flex items-center justify-center text-[#800020] hover:bg-[#800020] hover:text-white transition-colors">
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="text-center mt-10">
+          <Button className="h-12 px-8 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white text-sm font-semibold gap-2">
+            View All Products <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/landing/Categories.jsx">
+"use client";
+
+import { motion } from "framer-motion";
+import { ArrowRight, Watch, Wallet, SprayCan } from "lucide-react";
+
+const CATEGORIES = [
+  {
+    key: "wallet",
+    icon: Wallet,
+    title: "Wallets",
+    desc: "Premium wallets",
+  },
+  {
+    key: "watch",
+    icon: Watch,
+    title: "Watches",
+    desc: "Discover watches for every style and occasion.",
+  },
+  {
+    key: "perfume",
+    icon: SprayCan,
+    title: "Perfumes",
+    desc: "Scents that leave a lasting impression.",
+  },
+];
+
+export default function Categories() {
+  return (
+    <section id="categories" className="w-full bg-[#FAFAFA] py-20">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12">
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-3">
+            BROWSE CATEGORIES
+          </p>
+          <h2 className="font-serif text-4xl lg:text-5xl text-neutral-900">
+            Shop by Category
+          </h2>
+          <div
+            className="w-14 h-[3px] bg-[#C9A14A] mx-auto mt-4"
+            aria-hidden="true"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {CATEGORIES.map((cat, i) => (
+            <motion.article
+              key={cat.key}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.6, delay: i * 0.1 }}
+              className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-neutral-100"
+            >
+              {/* This box is the LANDING SLOT for the flying product.
+                  GSAP.Flip uses data-slot to find it. */}
+              <div
+                data-slot={cat.key}
+                id={`slot-${cat.key}`}
+                className="relative h-64 bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center overflow-hidden"
+              >
+                <span className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center z-10">
+                  <cat.icon
+                    className="w-5 h-5 text-[#800020]"
+                    strokeWidth={1.8}
+                  />
+                </span>
+                {/* The image will fly INTO this container on scroll.
+                    Empty by default. */}
+              </div>
+              <div className="p-6">
+                <h3 className="font-serif text-2xl text-neutral-900 mb-2">
+                  {cat.title}
+                </h3>
+                <p className="text-sm text-neutral-600 mb-4 leading-relaxed">
+                  {cat.desc}
+                </p>
+                <a
+                  href="#"
+                  className="inline-flex items-center gap-1.5 text-sm text-[#800020] font-semibold hover:gap-3 transition-all"
+                >
+                  Explore <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/landing/Footer.jsx">
+"use client";
+
+import Link from "next/link";
+import { Phone, Mail, MapPin } from "lucide-react";
+
+import {
+  FaInstagram,
+  FaFacebookF,
+  FaYoutube,
+  FaXTwitter,
+} from "react-icons/fa6";
+
+const COLUMNS = [
+  {
+    title: "SHOP",
+    links: ["Watches", "Wallets", "Perfumes", "Best Sellers", "New Arrivals"],
+  },
+  {
+    title: "COMPANY",
+    links: [
+      "About Us",
+      "Our Story",
+      "Careers",
+      "Sustainability",
+      "News & Blog",
+    ],
+  },
+  {
+    title: "CUSTOMER SERVICE",
+    links: [
+      "Contact Us",
+      "Shipping & Delivery",
+      "Returns & Exchanges",
+      "Warranty",
+      "FAQs",
+    ],
+  },
+];
+
+export default function Footer() {
+  return (
+    <footer className="w-full bg-[#FAFAFA] border-t border-neutral-200">
+      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
+        {/* Brand */}
+        <div className="col-span-2">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-10 h-10 rounded-full border-2 border-[#800020] flex items-center justify-center">
+              <span className="font-serif text-lg font-bold text-[#800020]">
+                A
+              </span>
+            </div>
+            <div className="leading-tight">
+              <div className="font-serif text-lg font-bold tracking-[0.15em]">
+                TIME AURA
+              </div>
+              <div className="text-[9px] tracking-[0.25em] text-neutral-500">
+                CRAFTING MOMENTS
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-neutral-600 leading-relaxed mb-4 max-w-xs">
+            SHOP PREMIUM. SHOP SMART.ches, wallets, and perfumes SHOP
+            PREMIUM. SHOP SMART. those who value timeless quality and style.
+          </p>
+          <div className="flex gap-3">
+            {[FaInstagram, FaFacebookF, FaYoutube, FaXTwitter].map(
+              (Icon, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="w-9 h-9 rounded-full border border-neutral-300 flex items-center justify-center text-neutral-700 hover:bg-[#800020] hover:text-white hover:border-[#800020] transition-colors"
+                  aria-label="Social"
+                >
+                  <Icon className="w-4 h-4" strokeWidth={1.8} />
+                </a>
+              ),
+            )}
+          </div>
+        </div>
+
+        {/* Link columns */}
+        {COLUMNS.map((col) => (
+          <div key={col.title}>
+            <h4 className="text-[11px] font-bold tracking-[0.2em] text-neutral-900 mb-4">
+              {col.title}
+            </h4>
+            <ul className="space-y-2">
+              {col.links.map((link) => (
+                <li key={link}>
+                  <Link
+                    href="#"
+                    className="text-sm text-neutral-600 hover:text-[#800020] transition-colors"
+                  >
+                    {link}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        {/* Contact */}
+        <div>
+          <h4 className="text-[11px] font-bold tracking-[0.2em] text-neutral-900 mb-4">
+            CONTACT US
+          </h4>
+          <ul className="space-y-3 text-sm text-neutral-600">
+            <li className="flex items-start gap-2">
+              <Phone
+                className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
+                strokeWidth={1.8}
+              />
+              +1 (555) 123-4567
+            </li>
+            <li className="flex items-start gap-2">
+              <Mail
+                className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
+                strokeWidth={1.8}
+              />
+              support@timeaura.com
+            </li>
+            <li className="flex items-start gap-2">
+              <MapPin
+                className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
+                strokeWidth={1.8}
+              />
+              <span>
+                123 Time Aura Street,
+                <br />
+                New York, NY 10001, USA
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="border-t border-neutral-200">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
+          <p>© 2026 Time Aura. All Rights Reserved.</p>
+          <div className="flex gap-6">
+            <Link href="/privacy" className="hover:text-[#800020]">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-[#800020]">
+              Terms of Service
+            </Link>
+            <Link href="#" className="hover:text-[#800020]">
+              Cookie Policy
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+</file>
+
+<file path="components/features/landing/Hero.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import {
+  Play,
+  ArrowRight,
+  Truck,
+  ShieldCheck,
+  RefreshCw,
+  Award,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const FEATURES = [
+  { icon: Truck, title: "Free Worldwide Shipping", desc: "On all orders" },
+  { icon: ShieldCheck, title: "2 Year Warranty", desc: "Premium coverage" },
+  { icon: RefreshCw, title: "Easy Returns & Exchanges", desc: "Hassle free" },
+  { icon: Award, title: "100% Authentic Products", desc: "Guaranteed quality" },
+];
+
+export default function Hero() {
+  return (
+    <section
+      id="hero"
+      className="relative w-full bg-gradient-to-br from-[#faf5f2] via-[#f5ebe6] to-[#efdfd6] overflow-hidden"
+    >
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 items-center gap-10 py-16 lg:py-24">
+        {/* Left: copy */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        >
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-4">
+            DISCOVER PREMIUM LIFESTYLE PRODUCTS
+          </p>
+          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-neutral-900 mb-6">
+            SHOP PREMIUM. SHOP SMART. Moments,
+            <br />
+            Made for <span className="text-[#800020]">You.</span>
+          </h1>
+          <p className="text-neutral-600 text-base leading-relaxed max-w-md mb-8">
+            Discover watches, wallets, perfumes
+          </p>
+
+          <div className="flex items-center gap-4 mb-12">
+            <Button className="h-12 px-6 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white text-sm font-semibold gap-2">
+              Shop Now <ArrowRight className="w-4 h-4" />
+            </Button>
+            <button className="flex items-center gap-3 text-sm font-medium text-neutral-700 hover:text-[#800020] transition-colors">
+              <span className="w-10 h-10 rounded-full border-2 border-[#800020] flex items-center justify-center">
+                <Play className="w-3.5 h-3.5 text-[#800020] fill-[#800020] ml-0.5" />
+              </span>
+              Watch Story
+            </button>
+          </div>
+
+          {/* Feature strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="flex items-start gap-2">
+                <Icon
+                  className="w-5 h-5 text-[#800020] shrink-0 mt-0.5"
+                  strokeWidth={1.8}
+                />
+                <div>
+                  <div className="text-[11px] font-semibold text-neutral-900 leading-tight">
+                    {title}
+                  </div>
+                  <div className="text-[10px] text-neutral-500 mt-0.5">
+                    {desc}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Right: product composition. The three <div data-fly-*> elements
+            are the "fly-from" origins that GSAP will animate to the cards below. */}
+        <div className="relative h-[420px] lg:h-[520px]">
+          {/* Static background composition — decorative */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Image
+              src="/images/products/hero-composition.jpg"
+              alt=""
+              fill
+              priority
+              className="object-contain object-center pointer-events-none select-none opacity-0"
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* The three "flying" products. Positioned in the hero on load.
+              Each gets its own id so ScrollAnimator can look them up. */}
+          <div
+            id="fly-wallet"
+            data-fly="wallet"
+            className="absolute left-[5%] top-[38%] w-[45%] aspect-square"
+          >
+            <Image
+              src="/images/products/wallet.png"
+              alt="Time Aura leather wallet"
+              fill
+              className="object-contain drop-shadow-2xl"
+              priority
+            />
+          </div>
+
+          <div
+            id="fly-watch"
+            data-fly="watch"
+            className="absolute left-[30%] top-[12%] w-[45%] aspect-square z-10"
+          >
+            <Image
+              src="/images/products/watch.png"
+              alt="Time Aura Heritage watch"
+              fill
+              className="object-contain drop-shadow-2xl"
+              priority
+            />
+          </div>
+
+          <div
+            id="fly-perfume"
+            data-fly="perfume"
+            className="absolute right-[2%] top-[10%] w-[38%] aspect-[2/3]"
+          >
+            <Image
+              src="/images/products/perfume.png"
+              alt="Time Aura Oud Prestige perfume"
+              fill
+              className="object-contain drop-shadow-2xl"
+              priority
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/landing/Navbar.jsx">
+"use client";
+
+import Link from "next/link";
+import { Search, ShoppingBag, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const NAV_LINKS = [
+  { label: "Home", href: "/", active: true },
+  { label: "Collections", href: "/collections", hasDropdown: true },
+  { label: "About Us", href: "/about" },
+  { label: "Features", href: "/features" },
+  { label: "Reviews", href: "/reviews" },
+  { label: "Contact", href: "/contact" },
+];
+
+export default function Navbar() {
+  return (
+    <nav className="w-full bg-white border-b border-neutral-100 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-full border-2 border-[#800020] flex items-center justify-center">
+            <span className="font-serif text-lg font-bold text-[#800020]">
+              A
+            </span>
+          </div>
+          <div className="leading-tight">
+            <div className="font-serif text-lg font-bold tracking-[0.15em] text-neutral-900">
+              TIME AURA
+            </div>
+            <div className="text-[9px] tracking-[0.25em] text-neutral-500">
+              CRAFTING MOMENTS
+            </div>
+          </div>
+        </Link>
+
+        {/* Links */}
+        <div className="hidden lg:flex items-center gap-8">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={`text-sm font-medium transition-colors flex items-center gap-1 ${
+                link.active
+                  ? "text-[#800020] border-b-2 border-[#800020] pb-1"
+                  : "text-neutral-700 hover:text-[#800020]"
+              }`}
+            >
+              {link.label}
+              {link.hasDropdown && <ChevronDown className="w-3.5 h-3.5" />}
+            </Link>
+          ))}
+        </div>
+
+        {/* Right cluster */}
+        <div className="flex items-center gap-4">
+          <button
+            className="text-neutral-700 hover:text-[#800020]"
+            aria-label="Search"
+          >
+            <Search className="w-5 h-5" strokeWidth={1.8} />
+          </button>
+          <button
+            className="relative text-neutral-700 hover:text-[#800020]"
+            aria-label="Cart"
+          >
+            <ShoppingBag className="w-5 h-5" strokeWidth={1.8} />
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#800020] text-white text-[10px] flex items-center justify-center font-semibold">
+              0
+            </span>
+          </button>
+          <Button className="h-10 px-5 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white text-xs font-semibold tracking-wide uppercase">
+            Explore Collection
+          </Button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+</file>
+
+<file path="components/features/landing/PerksBanner.jsx">
+"use client";
+
+import { Gift, Zap, Tag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const PERKS = [
+  { icon: Gift, title: "Exclusive Offers", desc: "For our members only" },
+  { icon: Zap, title: "Early Access", desc: "To new collections" },
+  { icon: Tag, title: "Special Discounts", desc: "And much more" },
+];
+
+export default function PerksBanner() {
+  return (
+    <section className="w-full bg-[#5c0016] text-white py-12">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_1.2fr] gap-8 items-center">
+        {PERKS.map(({ icon: Icon, title, desc }) => (
+          <div key={title} className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full border-2 border-[#C9A14A] flex items-center justify-center shrink-0">
+              <Icon className="w-6 h-6 text-[#C9A14A]" strokeWidth={1.8} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-base">{title}</h3>
+              <p className="text-xs text-white/70">{desc}</p>
+            </div>
+          </div>
+        ))}
+
+        <div>
+          <h3 className="font-serif text-xl mb-2">Join the Time Aura Family</h3>
+          <p className="text-xs text-white/70 mb-3">
+            Subscribe to get special offers, free giveaways, and
+            once-in-a-lifetime deals.
+          </p>
+          <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 h-10 px-3 rounded-xl bg-white text-neutral-900 text-sm outline-none focus:ring-2 focus:ring-[#C9A14A]"
+              aria-label="Email address"
+            />
+            <Button className="h-10 px-5 rounded-xl bg-[#C9A14A] hover:bg-[#b8912f] text-neutral-900 text-xs font-semibold">
+              Subscribe
+            </Button>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/landing/ScrollFlyAnimator.jsx">
+"use client";
+
+import { useEffect, useLayoutEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Flip } from "gsap/Flip";
+
+// Runs safely on client only
+const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+const PRODUCTS = ["watch", "wallet", "perfume"];
+
+export default function ScrollFlyAnimator() {
+  useIso(() => {
+    gsap.registerPlugin(ScrollTrigger, Flip);
+
+    const ctx = gsap.context(() => {
+      // For each product, build a scroll-scrubbed animation that moves it
+      // from its current position (hero) to the category slot's position.
+      PRODUCTS.forEach((key) => {
+        const el = document.getElementById(`fly-${key}`);
+        const slot = document.getElementById(`slot-${key}`);
+        if (!el || !slot) return;
+
+        // Capture starting state
+        const startRect = el.getBoundingClientRect();
+        const startScroll = window.scrollY;
+
+        ScrollTrigger.create({
+          trigger: "#categories",
+          start: "top bottom", // when categories section enters viewport
+          end: "top center", // finishes when it hits the center of viewport
+          scrub: 1, // tie animation to scroll (1s lag = smooth)
+          onUpdate: (self) => {
+            const slotRect = slot.getBoundingClientRect();
+            const heroEl = document.getElementById(`fly-${key}`);
+            if (!heroEl) return;
+
+            // Recompute the START rect on each frame because the hero also
+            // scrolls. We use the element's ORIGINAL screen position at scroll=0
+            // as our starting reference and interpolate toward the slot's
+            // CURRENT position.
+            const parentRect = heroEl.parentElement.getBoundingClientRect();
+
+            // Progress goes 0 → 1
+            const p = self.progress;
+
+            // Target size = ~85% of slot dimensions (padding inside card)
+            const targetW = slotRect.width * 0.85;
+            const targetH = slotRect.height * 0.85;
+
+            // Original hero-relative offsets
+            const originalW = startRect.width;
+            const originalH = startRect.height;
+
+            const currentW = gsap.utils.interpolate(originalW, targetW, p);
+            const currentH = gsap.utils.interpolate(originalH, targetH, p);
+
+            // Position relative to viewport, then convert to fixed positioning
+            const originX = startRect.left;
+            const originY = startRect.top + (window.scrollY - startScroll);
+            const targetX = slotRect.left + (slotRect.width - targetW) / 2;
+            const targetY = slotRect.top + (slotRect.height - targetH) / 2;
+
+            const currentX = gsap.utils.interpolate(originX, targetX, p);
+            const currentY = gsap.utils.interpolate(originY, targetY, p);
+
+            gsap.set(heroEl, {
+              position: "fixed",
+              left: currentX,
+              top: currentY,
+              width: currentW,
+              height: currentH,
+              zIndex: 40,
+              rotate: gsap.utils.interpolate(
+                0,
+                key === "watch" ? -8 : key === "wallet" ? 6 : -4,
+                p,
+              ),
+            });
+          },
+          onLeaveBack: () => {
+            // Fully back in hero — restore original inline styles
+            const heroEl = document.getElementById(`fly-${key}`);
+            if (heroEl) {
+              gsap.set(heroEl, { clearProps: "all" });
+            }
+          },
+        });
+      });
+
+      // Refresh once fonts/images have settled
+      ScrollTrigger.refresh();
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  return null;
+}
+</file>
+
+<file path="components/features/landing/Testimonials.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+
+const REVIEWS = [
+  {
+    text: "The craftsmanship and quality are beyond exceptional. Time Aura is now my go-to brand!",
+    name: "Ahmed ",
+    avatar: "/images/products/avatar-1.jpg",
+  },
+  {
+    text: "Absolutely love the wallet I bought. Elegant, durable and worth every penny.",
+    name: "Sarah ",
+    avatar: "/images/products/avatar-2.jpg",
+  },
+  {
+    text: "The perfumes are long-lasting and premium. I get compliments every time!",
+    name: "Abdullah",
+    avatar: "/images/products/avatar-3.jpg",
+  },
+];
+
+export default function Testimonials() {
+  return (
+    <section id="testimonials" className="w-full bg-neutral-100 py-16">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-3">
+            WHAT OUR CUSTOMERS SAY
+          </p>
+          <h2 className="font-serif text-4xl text-neutral-900">
+            Trusted by Thousands
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            className="w-10 h-10 rounded-full border border-[#800020]/30 flex items-center justify-center text-[#800020] hover:bg-[#800020] hover:text-white transition-colors shrink-0"
+            aria-label="Previous testimonial"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
+            {REVIEWS.map((r, i) => (
+              <motion.article
+                key={r.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-white rounded-2xl p-6"
+              >
+                <div className="flex gap-0.5 text-[#C9A14A] mb-3">
+                  {Array.from({ length: 5 }).map((_, k) => (
+                    <Star key={k} className="w-3.5 h-3.5 fill-[#C9A14A]" />
+                  ))}
+                </div>
+                <p className="text-sm text-neutral-700 leading-relaxed mb-6">
+                  &ldquo;{r.text}&rdquo;
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-neutral-200">
+                    <Image
+                      src={r.avatar}
+                      alt={r.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-neutral-900">
+                      {r.name}
+                    </div>
+                    <div className="text-[11px] text-neutral-500">
+                      Verified Buyer
+                    </div>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+
+          <button
+            className="w-10 h-10 rounded-full border border-[#800020]/30 flex items-center justify-center text-[#800020] hover:bg-[#800020] hover:text-white transition-colors shrink-0"
+            aria-label="Next testimonial"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
 </file>
 
 <file path="components/features/legal/LegalLayout.js">
@@ -1459,7 +3843,8 @@ export default function PageTransition({ children }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      style={{ willChange: "transform, opacity" }}
     >
       {children}
     </motion.div>
@@ -1506,13 +3891,14 @@ export default function QueryProvider({ children }) {
 </file>
 
 <file path="components/ui/button.jsx">
-import { Button as ButtonPrimitive } from "@base-ui/react/button"
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-4xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-4xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none cursor-pointer focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px hover:translate-y-[-1px] hover:shadow-sm disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+
   {
     variants: {
       variant: {
@@ -1543,8 +3929,8 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 function Button({
   className,
@@ -1556,11 +3942,12 @@ function Button({
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };
 </file>
 
 <file path="components/ui/checkbox.jsx">
@@ -1795,39 +4182,22 @@ export { Toaster }
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "@/lib/api";
 
-// Query key registry — single source of truth
-export const authKeys = {
-  me: ["auth", "me"],
-};
+export const authKeys = { me: ["auth", "me"] };
 
-/**
- * Cached current user. Runs once per session; other components read from cache.
- * This is the real "don't exhaust the server" win.
- */
 export function useCurrentUser({ enabled = true } = {}) {
   return useQuery({
     queryKey: authKeys.me,
     queryFn: authApi.me,
     enabled,
-    staleTime: 5 * 60 * 1000, // 5 min — user data rarely changes mid-session
+    staleTime: 5 * 60 * 1000,
     retry: false,
   });
 }
 
-/**
- * POST /auth/register — mutation, cannot be cached.
- * Consistent loading/error state via TanStack.
- */
 export function useRegister() {
-  return useMutation({
-    mutationFn: authApi.register,
-  });
+  return useMutation({ mutationFn: authApi.register });
 }
 
-/**
- * POST /auth/login — mutation. On success, seed the /me cache
- * with the returned user so no extra GET /me is needed.
- */
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
@@ -1840,13 +4210,157 @@ export function useLogin() {
   });
 }
 
-/**
- * POST /auth/verify-email — mutation.
- */
-export function useVerifyEmail() {
+export function useGoogleLogin() {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: authApi.verifyEmail,
+    mutationFn: authApi.googleLogin,
+    onSuccess: (res) => {
+      // Same pattern as useLogin — seed the /me cache
+      if (res?.data?.user) {
+        qc.setQueryData(authKeys.me, { data: { user: res.data.user } });
+      }
+    },
   });
+}
+
+export function useVerifyEmail() {
+  return useMutation({ mutationFn: authApi.verifyEmail });
+}
+
+export function useResendVerification() {
+  return useMutation({ mutationFn: authApi.resendVerification });
+}
+
+export function useForgotPassword() {
+  return useMutation({ mutationFn: authApi.forgotPassword });
+}
+
+export function useResetPassword() {
+  return useMutation({ mutationFn: authApi.resetPassword });
+}
+</file>
+
+<file path="hooks/useGoogleSignIn.js">
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+/**
+ * Wraps Google Identity Services in a hook.
+ * Returns `signIn()` which resolves with { idToken } when the user completes
+ * the Google flow, or rejects if they close the popup / an error occurs.
+ */
+export function useGoogleSignIn() {
+  const [ready, setReady] = useState(false);
+  const resolverRef = useRef(null);
+
+  // Wait for the GIS script (loaded in layout.js) to attach itself to window
+  useEffect(() => {
+    if (!CLIENT_ID) return;
+
+    let cancelled = false;
+    const check = () => {
+      if (cancelled) return;
+      if (typeof window !== "undefined" && window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: (response) => {
+            if (resolverRef.current) {
+              if (response?.credential) {
+                resolverRef.current.resolve({ idToken: response.credential });
+              } else {
+                resolverRef.current.reject(
+                  new Error("Google did not return a credential"),
+                );
+              }
+              resolverRef.current = null;
+            }
+          },
+        });
+        setReady(true);
+      } else {
+        setTimeout(check, 100);
+      }
+    };
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const signIn = useCallback(() => {
+    if (!CLIENT_ID) {
+      return Promise.reject(
+        new Error(
+          "Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add it to .env.local.",
+        ),
+      );
+    }
+    if (!ready || !window.google?.accounts?.id) {
+      return Promise.reject(new Error("Google sign-in is not ready yet."));
+    }
+
+    return new Promise((resolve, reject) => {
+      resolverRef.current = { resolve, reject };
+
+      // Show Google's One Tap / popup prompt
+      window.google.accounts.id.prompt((notification) => {
+        // If the prompt was skipped/dismissed and we still have a pending
+        // resolver, reject so the calling code can handle it.
+        if (
+          notification.isNotDisplayed?.() ||
+          notification.isSkippedMoment?.() ||
+          notification.isDismissedMoment?.()
+        ) {
+          if (resolverRef.current) {
+            resolverRef.current.reject(
+              new Error("Sign-in was cancelled or blocked."),
+            );
+            resolverRef.current = null;
+          }
+        }
+      });
+    });
+  }, [ready]);
+
+  return { signIn, ready, configured: Boolean(CLIENT_ID) };
+}
+</file>
+
+<file path="hooks/useResendCountdown.js">
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+/**
+ * Countdown timer for "Resend code" buttons.
+ * @param {number} seconds initial cooldown after triggering (default 60)
+ */
+export function useResendCountdown(seconds = 60) {
+  const [remaining, setRemaining] = useState(0);
+  const intervalRef = useRef(null);
+
+  const start = useCallback(() => {
+    setRemaining(seconds);
+  }, [seconds]);
+
+  useEffect(() => {
+    if (remaining <= 0) return;
+    intervalRef.current = setInterval(() => {
+      setRemaining((r) => (r <= 1 ? 0 : r - 1));
+    }, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [remaining]);
+
+  const canResend = remaining === 0;
+  const formatted =
+    String(Math.floor(remaining / 60)).padStart(2, "0") +
+    ":" +
+    String(remaining % 60).padStart(2, "0");
+
+  return { start, canResend, remaining, formatted };
 }
 </file>
 
@@ -1889,22 +4403,41 @@ async function request(
 }
 
 export const authApi = {
-  // POST /api/v1/auth/register  body: { name, email, password }
+  // POST /auth/register  body: { name, email, password }
   register: ({ name, email, password }) =>
     request("/auth/register", {
       method: "POST",
       body: { name, email, password },
     }),
 
-  // POST /api/v1/auth/login  body: { email, password }
+  // POST /auth/login  body: { email, password }
   login: ({ email, password }) =>
     request("/auth/login", { method: "POST", body: { email, password } }),
 
-  // POST /api/v1/auth/verify-email  body: { email, code }
+  // POST /auth/google  body: { idToken }
+  googleLogin: ({ idToken }) =>
+    request("/auth/google", { method: "POST", body: { idToken } }),
+
+  // POST /auth/verify-email  body: { email, code }
   verifyEmail: ({ email, code }) =>
     request("/auth/verify-email", { method: "POST", body: { email, code } }),
 
-  // GET /api/v1/auth/me  (requires Bearer token)
+  // POST /auth/resend-verification  body: { email }
+  resendVerification: ({ email }) =>
+    request("/auth/resend-verification", { method: "POST", body: { email } }),
+
+  // POST /auth/forgot-password  body: { email }
+  forgotPassword: ({ email }) =>
+    request("/auth/forgot-password", { method: "POST", body: { email } }),
+
+  // POST /auth/reset-password  body: { email, code, newPassword }
+  resetPassword: ({ email, code, newPassword }) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: { email, code, newPassword },
+    }),
+
+  // GET /auth/me  (requires Bearer token)
   me: () => request("/auth/me", { auth: true }),
 };
 </file>
@@ -1923,10 +4456,7 @@ import { z } from "zod";
 
 export const registerSchema = z
   .object({
-    name: z
-      .string()
-      .min(2, "Name must be at least 2 characters")
-      .max(100, "Name must be at most 100 characters"),
+    name: z.string().min(2, "Name must be at least 2 characters").max(100),
     email: z.string().email("Please enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
@@ -1948,26 +4478,26 @@ export const verifyEmailSchema = z.object({
   email: z.string().email(),
   code: z.string().length(6, "Code must be 6 digits"),
 });
-</file>
 
-<file path="public/file.svg">
-<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
-</file>
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+});
 
-<file path="public/globe.svg">
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
-</file>
+// Step 1: user just enters the 6-digit code (email is in the URL)
+export const resetCodeSchema = z.object({
+  code: z.string().length(6, "Code must be 6 digits"),
+});
 
-<file path="public/next.svg">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
-</file>
-
-<file path="public/vercel.svg">
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
-</file>
-
-<file path="public/window.svg">
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+// Step 2 stays the same
+export const newPasswordSchema = z
+  .object({
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 </file>
 
 <file path=".dockerignore">
@@ -2149,7 +4679,18 @@ export default eslintConfig;
 <file path="next.config.mjs">
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  allowedDevOrigins: [
+    "whiny-primate-progeny.ngrok-free.dev",
+  ],
+
+  async rewrites() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        destination: "http://timeaura_backend:5000/api/v1/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;
@@ -2178,6 +4719,7 @@ export default nextConfig;
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
+    "gsap": "^3.15.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.24.0",
     "next": "^16.2.10",
@@ -2185,6 +4727,7 @@ export default nextConfig;
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.81.0",
+    "react-icons": "^5.7.0",
     "shadcn": "^4.13.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
