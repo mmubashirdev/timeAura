@@ -99,7 +99,7 @@ ${footer}
 
 ---
 TIME AURA
-Timeless Style. Precision You Trust.
+PRECISION. ELEGANCE. TIMELESS.
 
 Questions? Reply to this email.
 © ${new Date().getFullYear()} Time Aura. All rights reserved.
