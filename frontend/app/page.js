@@ -2,7 +2,6 @@ import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
 import Navbar from "@/components/features/landing/Navbar";
 import Hero from "@/components/features/landing/Hero";
 import PerfumeSpotlight from "@/components/features/landing/PerfumeSpotlight";
-import PerfumeSpotlightAnimator from "@/components/features/landing/PerfumeSpotlightAnimator";
 import Categories from "@/components/features/landing/Categories";
 import BestSellers from "@/components/features/landing/BestSellers";
 import Testimonials from "@/components/features/landing/Testimonials";
@@ -27,7 +26,6 @@ export default function HomePage() {
       <Testimonials />
       <PerksBanner />
       <Footer />
-      <PerfumeSpotlightAnimator />
     </main>
   );
 }

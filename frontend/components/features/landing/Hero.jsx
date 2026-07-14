@@ -83,7 +83,7 @@ export default function Hero() {
           {/* Static background composition — decorative */}
           <div className="absolute inset-0 flex items-center justify-center">
             <Image
-              src="/images/products/hero-composition.jpg"
+              src="/images/products/hero-composition.png"
               alt=""
               fill
               priority

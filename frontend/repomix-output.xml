@@ -100,8 +100,9 @@ components/
       Footer.jsx
       Hero.jsx
       Navbar.jsx
+      PerfumeSpotlight.jsx
+      PerfumeSpotlightAnimator.jsx
       PerksBanner.jsx
-      ScrollFlyAnimator.jsx
       Testimonials.jsx
     legal/
       LegalLayout.js
@@ -269,7 +270,8 @@ import BestSellers from "@/components/features/landing/BestSellers";
 import Testimonials from "@/components/features/landing/Testimonials";
 import PerksBanner from "@/components/features/landing/PerksBanner";
 import Footer from "@/components/features/landing/Footer";
-import ScrollFlyAnimator from "@/components/features/landing/ScrollFlyAnimator";
+import PerfumeSpotlight from "@/components/features/landing/PerfumeSpotlight";
+import PerfumeSpotlightAnimator from "@/components/features/landing/PerfumeSpotlightAnimator";
 
 export const metadata = {
   title: "Time Aura — SHOP PREMIUM. SHOP SMART. Moments, Made for You",
@@ -288,10 +290,8 @@ export default function HomePage() {
       <Testimonials />
       <PerksBanner />
       <Footer />
-
-      {/* Client-only, mounts after DOM is ready.
-          Handles the watch/wallet/perfume fly animation. */}
-      <ScrollFlyAnimator />
+      <PerfumeSpotlight />
+      <PerfumeSpotlightAnimator />
     </main>
   );
 }
@@ -1945,12 +1945,13 @@ export default function RootLayout({ children }) {
 import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
 import Navbar from "@/components/features/landing/Navbar";
 import Hero from "@/components/features/landing/Hero";
+import PerfumeSpotlight from "@/components/features/landing/PerfumeSpotlight";
+import PerfumeSpotlightAnimator from "@/components/features/landing/PerfumeSpotlightAnimator";
 import Categories from "@/components/features/landing/Categories";
 import BestSellers from "@/components/features/landing/BestSellers";
 import Testimonials from "@/components/features/landing/Testimonials";
 import PerksBanner from "@/components/features/landing/PerksBanner";
 import Footer from "@/components/features/landing/Footer";
-import ScrollFlyAnimator from "@/components/features/landing/ScrollFlyAnimator";
 
 export const metadata = {
   title: "Time Aura — SHOP PREMIUM. SHOP SMART. Moments, Made for You",
@@ -1964,15 +1965,13 @@ export default function HomePage() {
       <AnnouncementBar />
       <Navbar />
       <Hero />
+      <PerfumeSpotlight />
       <Categories />
       <BestSellers />
       <Testimonials />
       <PerksBanner />
       <Footer />
-
-      {/* Client-only, mounts after DOM is ready.
-          Handles the watch/wallet/perfume fly animation. */}
-      <ScrollFlyAnimator />
+      <PerfumeSpotlightAnimator />
     </main>
   );
 }
@@ -3501,37 +3500,31 @@ const PRODUCTS = [
     id: 1,
     name: "TA Chrono Classic",
     price: 199,
-    img: "/images/products/best-1.png",
+    img: "/images/time-products/watch1.jpg",
   },
   {
     id: 2,
     name: "TA Leather Wallet",
     price: 79,
-    img: "/images/products/best-2.png",
+    img: "/images/time-products/wallet1.jpg",
   },
   {
     id: 3,
     name: "Oud Prestige",
     price: 129,
-    img: "/images/products/best-3.png",
-  },
-  {
-    id: 4,
-    name: "TA Heritage",
-    price: 179,
-    img: "/images/products/best-4.png",
+    img: "/images/time-products/perfume1.jpg",
   },
   {
     id: 5,
     name: "TA Bifold Wallet",
     price: 69,
-    img: "/images/products/best-5.png",
+    img: "/images/time-products/wallet 5.jpg",
   },
   {
     id: 6,
     name: "Noir Intense",
     price: 119,
-    img: "/images/products/best-6.png",
+    img: "/images/time-products/perfume 2.jpg",
   },
 ];
 
@@ -3548,7 +3541,7 @@ export default function BestSellers() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {PRODUCTS.map((p, i) => (
             <motion.div
               key={p.id}
@@ -3556,14 +3549,14 @@ export default function BestSellers() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="bg-white rounded-2xl p-4 border border-neutral-100 hover:shadow-lg transition-shadow group"
+              className="bg-white rounded-2xl p-5 border border-neutral-100 hover:shadow-lg transition-shadow group"
             >
               <div className="relative aspect-square mb-3 bg-neutral-50 rounded-xl overflow-hidden">
                 <Image
                   src={p.img}
                   alt={p.name}
                   fill
-                  className="object-contain p-4 group-hover:scale-105 transition-transform"
+                  className="object-cover w-full h-full p-0 group-hover:scale-105 transition-transform"
                   sizes="200px"
                 />
               </div>
@@ -3598,6 +3591,7 @@ export default function BestSellers() {
 
 import { motion } from "framer-motion";
 import { ArrowRight, Watch, Wallet, SprayCan } from "lucide-react";
+import Image from "next/image";
 
 const CATEGORIES = [
   {
@@ -3628,9 +3622,11 @@ export default function Categories() {
           <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-3">
             BROWSE CATEGORIES
           </p>
+
           <h2 className="font-serif text-4xl lg:text-5xl text-neutral-900">
             Shop by Category
           </h2>
+
           <div
             className="w-14 h-[3px] bg-[#C9A14A] mx-auto mt-4"
             aria-hidden="true"
@@ -3647,12 +3643,11 @@ export default function Categories() {
               transition={{ duration: 0.6, delay: i * 0.1 }}
               className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-neutral-100"
             >
-              {/* This box is the LANDING SLOT for the flying product.
-                  GSAP.Flip uses data-slot to find it. */}
+              {/* Landing slot for GSAP */}
               <div
                 data-slot={cat.key}
                 id={`slot-${cat.key}`}
-                className="relative h-64 bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center overflow-hidden"
+                className="relative h-64 bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden"
               >
                 <span className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center z-10">
                   <cat.icon
@@ -3660,21 +3655,77 @@ export default function Categories() {
                     strokeWidth={1.8}
                   />
                 </span>
-                {/* The image will fly INTO this container on scroll.
-                    Empty by default. */}
+
+                {cat.key === "wallet" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src="/images/time-products/wallet1.jpg"
+                      alt="Time Aura wallet"
+                      fill
+                      className="object-cover drop-shadow-xl"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                )}
+
+                {cat.key === "watch" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src="/images/time-products/watch1.jpg"
+                      alt="Time Aura watch"
+                      fill
+                      className="object-cover drop-shadow-xl"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                )}
+
+                {cat.key === "perfume" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src="/images/time-products/perfume1.jpg"
+                      alt="Time Aura perfume"
+                      fill
+                      className="object-cover drop-shadow-xl"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                )}
               </div>
+
               <div className="p-6">
                 <h3 className="font-serif text-2xl text-neutral-900 mb-2">
                   {cat.title}
                 </h3>
+
                 <p className="text-sm text-neutral-600 mb-4 leading-relaxed">
                   {cat.desc}
                 </p>
+
                 <a
                   href="#"
                   className="inline-flex items-center gap-1.5 text-sm text-[#800020] font-semibold hover:gap-3 transition-all"
                 >
-                  Explore <ArrowRight className="w-4 h-4" />
+                  Explore
+                  <ArrowRight className="w-4 h-4" />
                 </a>
               </div>
             </motion.article>
@@ -3729,7 +3780,7 @@ const COLUMNS = [
 export default function Footer() {
   return (
     <footer className="w-full bg-[#FAFAFA] border-t border-neutral-200">
-      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-4 grid grid-cols-2 md:grid-cols-5 gap-8">
         {/* Brand */}
         <div className="col-span-2">
           <div className="flex items-center gap-2 mb-4">
@@ -3789,43 +3840,65 @@ export default function Footer() {
         ))}
 
         {/* Contact */}
-        <div>
-          <h4 className="text-[11px] font-bold tracking-[0.2em] text-neutral-900 mb-4">
+      </div>
+      <div className="max-w-7xl mx-auto px-6 py-4 grid grid-cols-2 md:grid-cols-2 gap-8">
+        <div className="md:col-span-2">
+          <h4 className="text-[11px] font-bold tracking-[0.2em] text-neutral-900 mb-2">
             CONTACT US
           </h4>
-          <ul className="space-y-3 text-sm text-neutral-600">
-            <li className="flex items-start gap-2">
-              <Phone
-                className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
-                strokeWidth={1.8}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-20 items-spacebetween">
+            {/* Contact details */}
+            <ul className="space-y-3 text-sm text-neutral-600">
+              <li className="flex items-start gap-2">
+                <Phone
+                  className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
+                  strokeWidth={1.8}
+                />
+                +923000000000
+              </li>
+              <li className="flex items-start gap-2">
+                <Mail
+                  className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
+                  strokeWidth={1.8}
+                />
+                timeaura-online@gmail.com
+              </li>
+              <li className="flex items-start gap-2">
+                <MapPin
+                  className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
+                  strokeWidth={1.8}
+                />
+                <span>
+                  LGU
+                  <br />
+                  Lahore
+                </span>
+              </li>
+            </ul>
+
+            {/* Map */}
+            <div className="w-full">
+              <iframe
+                width="100%"
+                height="220"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                style={{ border: 0 }}
+                allowFullScreen
+                src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBVizdQeh3udy11xDc5Ao2YStR2gLc-rfc&amp;q=lahore%20garrison%20university&amp;maptype=roadmap&amp;zoom=14"
+                title="Lahore Garrison University Map"
               />
-              +923000000000
-            </li>
-            <li className="flex items-start gap-2">
-              <Mail
-                className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
-                strokeWidth={1.8}
-              />
-              timeaura-online@gmail.com
-            </li>
-            <li className="flex items-start gap-2">
-              <MapPin
-                className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
-                strokeWidth={1.8}
-              />
-              <span>
-                LGU
-                <br />
-                Lahore
-              </span>
-            </li>
-          </ul>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="border-t border-neutral-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
-          <p>Developed by mmubashirdev © 2026 Time Aura. All Rights Reserved.</p>
+          <p>mmubashirdev © 2026 Time Aura. All Rights Reserved.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-[#800020]">
               Privacy Policy
@@ -4071,6 +4144,175 @@ export default function Navbar() {
 }
 </file>
 
+<file path="components/features/landing/PerfumeSpotlight.jsx">
+"use client";
+
+import Image from "next/image";
+import { Droplets, Sparkles, Gem } from "lucide-react";
+
+export default function PerfumeSpotlight() {
+  return (
+    <section
+      id="perfume-spotlight"
+      className="relative bg-gradient-to-b from-[#efdfd6] to-[#FAFAFA]"
+    >
+      {/* Scroll distance for the sequence — taller = slower/longer animation */}
+      <div className="h-[300vh] relative">
+        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+          <p className="absolute top-10 left-1/2 -translate-x-1/2 text-[11px] tracking-[0.3em] text-[#800020] font-semibold">
+            SIGNATURE FRAGRANCE
+          </p>
+
+          {/* The perfume itself */}
+          <div
+            id="spotlight-perfume"
+            className="relative w-[200px] sm:w-[260px] aspect-[2/3]"
+            style={{ willChange: "transform" }}
+          >
+            <Image
+              src="/images/products/perfume.png"
+              alt="Time Aura Oud Prestige perfume"
+              fill
+              className="object-contain drop-shadow-2xl"
+              sizes="260px"
+            />
+
+            {/* Spray mist */}
+            <div
+              id="perfume-mist"
+              className="absolute left-1/2 -top-6 -translate-x-1/2 w-36 h-36 sm:w-44 sm:h-44 rounded-full opacity-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 70%)",
+                filter: "blur(1px)",
+              }}
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Feature callouts — DOM order matters, animator targets them by index */}
+          <div className="perfume-feature absolute left-[4%] sm:left-[12%] top-[24%] opacity-0 translate-y-4 flex items-center gap-2 bg-white/95 backdrop-blur rounded-full pl-2 pr-4 py-2 shadow-lg">
+            <span className="w-7 h-7 rounded-full bg-[#800020]/10 flex items-center justify-center shrink-0">
+              <Droplets
+                className="w-3.5 h-3.5 text-[#800020]"
+                strokeWidth={2}
+              />
+            </span>
+            <span className="text-xs font-semibold text-neutral-800 whitespace-nowrap">
+              Long-Lasting Scent
+            </span>
+          </div>
+
+          <div className="perfume-feature absolute right-[4%] sm:right-[12%] top-[42%] opacity-0 translate-y-4 flex items-center gap-2 bg-white/95 backdrop-blur rounded-full pl-2 pr-4 py-2 shadow-lg">
+            <span className="w-7 h-7 rounded-full bg-[#800020]/10 flex items-center justify-center shrink-0">
+              <Sparkles
+                className="w-3.5 h-3.5 text-[#800020]"
+                strokeWidth={2}
+              />
+            </span>
+            <span className="text-xs font-semibold text-neutral-800 whitespace-nowrap">
+              Premium Oud Blend
+            </span>
+          </div>
+
+          <div className="perfume-feature absolute left-[6%] sm:left-[14%] bottom-[20%] opacity-0 translate-y-4 flex items-center gap-2 bg-white/95 backdrop-blur rounded-full pl-2 pr-4 py-2 shadow-lg">
+            <span className="w-7 h-7 rounded-full bg-[#800020]/10 flex items-center justify-center shrink-0">
+              <Gem className="w-3.5 h-3.5 text-[#800020]" strokeWidth={2} />
+            </span>
+            <span className="text-xs font-semibold text-neutral-800 whitespace-nowrap">
+              Elegant Glass Bottle
+            </span>
+          </div>
+
+          <p className="absolute bottom-10 left-1/2 -translate-x-1/2 text-[10px] tracking-[0.25em] text-neutral-400 uppercase">
+            Scroll to explore
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/landing/PerfumeSpotlightAnimator.jsx">
+"use client";
+
+import { useLayoutEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+export default function PerfumeSpotlightAnimator() {
+  useLayoutEffect(() => {
+    // Respect reduced-motion preference — just show the static section, no animation
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      const wrap = document.getElementById("perfume-spotlight");
+      const perfume = document.getElementById("spotlight-perfume");
+      const mist = document.getElementById("perfume-mist");
+      const labels = gsap.utils.toArray(".perfume-feature");
+      if (!wrap || !perfume) return;
+
+      // sticky handles the "staying in view" part — GSAP only drives the
+      // timeline values, tied to scroll progress through the 300vh wrapper.
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: wrap,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      tl.fromTo(
+        perfume,
+        { rotateZ: -6, y: 40, scale: 0.85 },
+        { rotateZ: 8, y: 0, scale: 1, duration: 1, ease: "none" },
+      )
+        .to(labels[0], { opacity: 1, y: 0, duration: 0.6, ease: "none" }, 0.6)
+        .to(
+          mist,
+          { opacity: 0.9, scale: 1.5, y: -30, duration: 0.5, ease: "none" },
+          0.7,
+        )
+        .to(mist, { opacity: 0, duration: 0.4, ease: "none" }, 1.1)
+        .to(perfume, { rotateZ: -10, duration: 1, ease: "none" }, 1.2)
+        .to(labels[1], { opacity: 1, y: 0, duration: 0.6, ease: "none" }, 1.2)
+        .to(labels[2], { opacity: 1, y: 0, duration: 0.6, ease: "none" }, 1.9)
+        .to(labels, { opacity: 0, y: -10, duration: 0.5, ease: "none" }, 2.4)
+        .to(
+          perfume,
+          { scale: 0.5, y: 60, opacity: 0.25, duration: 0.8, ease: "none" },
+          2.4,
+        );
+    });
+
+    // Next.js + sticky layouts can cause initial ScrollTrigger measurements
+    // to be wrong until after paint. Refresh after mount.
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => {
+        try {
+          ScrollTrigger.refresh();
+        } catch {
+          // no-op
+        }
+      });
+      return () => cancelAnimationFrame(raf2);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      ctx.revert();
+    };
+  }, []);
+
+  return null;
+}
+</file>
+
 <file path="components/features/landing/PerksBanner.jsx">
 "use client";
 
@@ -4123,109 +4365,6 @@ export default function PerksBanner() {
 }
 </file>
 
-<file path="components/features/landing/ScrollFlyAnimator.jsx">
-"use client";
-
-import { useEffect, useLayoutEffect } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Flip } from "gsap/Flip";
-
-// Runs safely on client only
-const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-const PRODUCTS = ["watch", "wallet", "perfume"];
-
-export default function ScrollFlyAnimator() {
-  useIso(() => {
-    gsap.registerPlugin(ScrollTrigger, Flip);
-
-    const ctx = gsap.context(() => {
-      // For each product, build a scroll-scrubbed animation that moves it
-      // from its current position (hero) to the category slot's position.
-      PRODUCTS.forEach((key) => {
-        const el = document.getElementById(`fly-${key}`);
-        const slot = document.getElementById(`slot-${key}`);
-        if (!el || !slot) return;
-
-        // Capture starting state
-        const startRect = el.getBoundingClientRect();
-        const startScroll = window.scrollY;
-
-        ScrollTrigger.create({
-          trigger: "#categories",
-          start: "top bottom", // when categories section enters viewport
-          end: "top center", // finishes when it hits the center of viewport
-          scrub: 1, // tie animation to scroll (1s lag = smooth)
-          onUpdate: (self) => {
-            const slotRect = slot.getBoundingClientRect();
-            const heroEl = document.getElementById(`fly-${key}`);
-            if (!heroEl) return;
-
-            // Recompute the START rect on each frame because the hero also
-            // scrolls. We use the element's ORIGINAL screen position at scroll=0
-            // as our starting reference and interpolate toward the slot's
-            // CURRENT position.
-            const parentRect = heroEl.parentElement.getBoundingClientRect();
-
-            // Progress goes 0 → 1
-            const p = self.progress;
-
-            // Target size = ~85% of slot dimensions (padding inside card)
-            const targetW = slotRect.width * 0.85;
-            const targetH = slotRect.height * 0.85;
-
-            // Original hero-relative offsets
-            const originalW = startRect.width;
-            const originalH = startRect.height;
-
-            const currentW = gsap.utils.interpolate(originalW, targetW, p);
-            const currentH = gsap.utils.interpolate(originalH, targetH, p);
-
-            // Position relative to viewport, then convert to fixed positioning
-            const originX = startRect.left;
-            const originY = startRect.top + (window.scrollY - startScroll);
-            const targetX = slotRect.left + (slotRect.width - targetW) / 2;
-            const targetY = slotRect.top + (slotRect.height - targetH) / 2;
-
-            const currentX = gsap.utils.interpolate(originX, targetX, p);
-            const currentY = gsap.utils.interpolate(originY, targetY, p);
-
-            gsap.set(heroEl, {
-              position: "fixed",
-              left: currentX,
-              top: currentY,
-              width: currentW,
-              height: currentH,
-              zIndex: 40,
-              rotate: gsap.utils.interpolate(
-                0,
-                key === "watch" ? -8 : key === "wallet" ? 6 : -4,
-                p,
-              ),
-            });
-          },
-          onLeaveBack: () => {
-            // Fully back in hero — restore original inline styles
-            const heroEl = document.getElementById(`fly-${key}`);
-            if (heroEl) {
-              gsap.set(heroEl, { clearProps: "all" });
-            }
-          },
-        });
-      });
-
-      // Refresh once fonts/images have settled
-      ScrollTrigger.refresh();
-    });
-
-    return () => ctx.revert();
-  }, []);
-
-  return null;
-}
-</file>
-
 <file path="components/features/landing/Testimonials.jsx">
 "use client";
 
@@ -4237,17 +4376,17 @@ const REVIEWS = [
   {
     text: "The craftsmanship and quality are beyond exceptional. Time Aura is now my go-to brand!",
     name: "Ahmed ",
-    avatar: "/images/products/avatar-1.jpg",
+    avatar: "/images/products/review-avatar-1.jpg",
   },
   {
     text: "Absolutely love the wallet I bought. Elegant, durable and worth every penny.",
     name: "Sarah ",
-    avatar: "/images/products/avatar-2.jpg",
+    avatar: "/images/products/review-avatar-2.jpg",
   },
   {
     text: "The perfumes are long-lasting and premium. I get compliments every time!",
     name: "Abdullah",
-    avatar: "/images/products/avatar-3.jpg",
+    avatar: "/images/products/review-avatar-3.jpg",
   },
 ];
 
@@ -5286,7 +5425,8 @@ const nextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "http://timeaura_backend:5000/api/v1/:path*",
+        // destination: "http://timeaura_backend:5000/api/v1/:path*",
+        destination: "http://localhost:5000/api/v1/:path*",
       },
     ];
   },
