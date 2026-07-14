@@ -6,7 +6,8 @@ import BestSellers from "@/components/features/landing/BestSellers";
 import Testimonials from "@/components/features/landing/Testimonials";
 import PerksBanner from "@/components/features/landing/PerksBanner";
 import Footer from "@/components/features/landing/Footer";
-import ScrollFlyAnimator from "@/components/features/landing/ScrollFlyAnimator";
+import PerfumeSpotlight from "@/components/features/landing/PerfumeSpotlight";
+import PerfumeSpotlightAnimator from "@/components/features/landing/PerfumeSpotlightAnimator";
 
 export const metadata = {
   title: "Time Aura — SHOP PREMIUM. SHOP SMART. Moments, Made for You",
@@ -25,10 +26,8 @@ export default function HomePage() {
       <Testimonials />
       <PerksBanner />
       <Footer />
-
-      {/* Client-only, mounts after DOM is ready.
-          Handles the watch/wallet/perfume fly animation. */}
-      <ScrollFlyAnimator />
+      <PerfumeSpotlight />
+      <PerfumeSpotlightAnimator />
     </main>
   );
 }

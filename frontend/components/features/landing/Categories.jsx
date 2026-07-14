@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Watch, Wallet, SprayCan } from "lucide-react";
+import Image from "next/image";
 
 const CATEGORIES = [
   {
@@ -32,9 +33,11 @@ export default function Categories() {
           <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-3">
             BROWSE CATEGORIES
           </p>
+
           <h2 className="font-serif text-4xl lg:text-5xl text-neutral-900">
             Shop by Category
           </h2>
+
           <div
             className="w-14 h-[3px] bg-[#C9A14A] mx-auto mt-4"
             aria-hidden="true"
@@ -51,12 +54,11 @@ export default function Categories() {
               transition={{ duration: 0.6, delay: i * 0.1 }}
               className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow border border-neutral-100"
             >
-              {/* This box is the LANDING SLOT for the flying product.
-                  GSAP.Flip uses data-slot to find it. */}
+              {/* Landing slot for GSAP */}
               <div
                 data-slot={cat.key}
                 id={`slot-${cat.key}`}
-                className="relative h-64 bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center overflow-hidden"
+                className="relative h-64 bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden"
               >
                 <span className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 backdrop-blur flex items-center justify-center z-10">
                   <cat.icon
@@ -64,21 +66,77 @@ export default function Categories() {
                     strokeWidth={1.8}
                   />
                 </span>
-                {/* The image will fly INTO this container on scroll.
-                    Empty by default. */}
+
+                {cat.key === "wallet" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src="/images/time-products/wallet1.jpg"
+                      alt="Time Aura wallet"
+                      fill
+                      className="object-cover drop-shadow-xl"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                )}
+
+                {cat.key === "watch" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src="/images/time-products/watch1.jpg"
+                      alt="Time Aura watch"
+                      fill
+                      className="object-cover drop-shadow-xl"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                )}
+
+                {cat.key === "perfume" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.6 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src="/images/time-products/perfume1.jpg"
+                      alt="Time Aura perfume"
+                      fill
+                      className="object-cover drop-shadow-xl"
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                    />
+                  </motion.div>
+                )}
               </div>
+
               <div className="p-6">
                 <h3 className="font-serif text-2xl text-neutral-900 mb-2">
                   {cat.title}
                 </h3>
+
                 <p className="text-sm text-neutral-600 mb-4 leading-relaxed">
                   {cat.desc}
                 </p>
+
                 <a
                   href="#"
                   className="inline-flex items-center gap-1.5 text-sm text-[#800020] font-semibold hover:gap-3 transition-all"
                 >
-                  Explore <ArrowRight className="w-4 h-4" />
+                  Explore
+                  <ArrowRight className="w-4 h-4" />
                 </a>
               </div>
             </motion.article>
