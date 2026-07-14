@@ -10,37 +10,31 @@ const PRODUCTS = [
     id: 1,
     name: "TA Chrono Classic",
     price: 199,
-    img: "/images/products/best-1.png",
+    img: "/images/time-products/watch1.jpg",
   },
   {
     id: 2,
     name: "TA Leather Wallet",
     price: 79,
-    img: "/images/products/best-2.png",
+    img: "/images/time-products/wallet1.jpg",
   },
   {
     id: 3,
     name: "Oud Prestige",
     price: 129,
-    img: "/images/products/best-3.png",
-  },
-  {
-    id: 4,
-    name: "TA Heritage",
-    price: 179,
-    img: "/images/products/best-4.png",
+    img: "/images/time-products/perfume1.jpg",
   },
   {
     id: 5,
     name: "TA Bifold Wallet",
     price: 69,
-    img: "/images/products/best-5.png",
+    img: "/images/time-products/wallet 5.jpg",
   },
   {
     id: 6,
     name: "Noir Intense",
     price: 119,
-    img: "/images/products/best-6.png",
+    img: "/images/time-products/perfume 2.jpg",
   },
 ];
 
@@ -57,7 +51,7 @@ export default function BestSellers() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {PRODUCTS.map((p, i) => (
             <motion.div
               key={p.id}
@@ -65,14 +59,14 @@ export default function BestSellers() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="bg-white rounded-2xl p-4 border border-neutral-100 hover:shadow-lg transition-shadow group"
+              className="bg-white rounded-2xl p-5 border border-neutral-100 hover:shadow-lg transition-shadow group"
             >
               <div className="relative aspect-square mb-3 bg-neutral-50 rounded-xl overflow-hidden">
                 <Image
                   src={p.img}
                   alt={p.name}
                   fill
-                  className="object-contain p-4 group-hover:scale-105 transition-transform"
+                  className="object-cover w-full h-full p-0 group-hover:scale-105 transition-transform"
                   sizes="200px"
                 />
               </div>

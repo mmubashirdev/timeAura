@@ -45,6 +45,8 @@ app/
     ReducedMotion.js
   about/
     page.js
+  contact/
+    page.js
   dashboard/
     page.js
   forgot-password/
@@ -84,6 +86,13 @@ components/
       GoogleButton.js
       LoadingSpinner.js
       PasswordInput.js
+    contact/
+      ContactFAQ.jsx
+      ContactForm.jsx
+      ContactHero.jsx
+      ContactInfoCards.jsx
+      LocationMap.jsx
+      NewsletterCTA.jsx
     landing/
       AnnouncementBar.jsx
       BestSellers.jsx
@@ -204,6 +213,47 @@ export default function AboutPage() {
       <HowItWorks />
       <AboutTestimonials />
       <CtaBanner />
+      <Footer />
+    </main>
+  );
+}
+</file>
+
+<file path="app/contact/page.js">
+import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
+import Navbar from "@/components/features/landing/Navbar";
+import Footer from "@/components/features/landing/Footer";
+
+import ContactHero from "@/components/features/contact/ContactHero";
+import ContactInfoCards from "@/components/features/contact/ContactInfoCards";
+import ContactForm from "@/components/features/contact/ContactForm";
+import LocationMap from "@/components/features/contact/LocationMap";
+import ContactFAQ from "@/components/features/contact/ContactFAQ";
+import NewsletterCTA from "@/components/features/contact/NewsletterCTA";
+
+export const metadata = {
+  title: "Contact Us — Time Aura",
+  description:
+    "Get in touch with the Time Aura team — questions, order support, or feedback, we're here to help.",
+};
+
+export default function ContactPage() {
+  return (
+    <main className="w-full bg-[#FAFAFA] text-neutral-900 overflow-x-hidden">
+      <AnnouncementBar />
+      <Navbar />
+      <ContactHero />
+      <ContactInfoCards />
+
+      <section className="w-full bg-[#FAFAFA] py-4 lg:py-8">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ContactForm />
+          <LocationMap />
+        </div>
+      </section>
+
+      <ContactFAQ />
+      <NewsletterCTA />
       <Footer />
     </main>
   );
@@ -2863,6 +2913,548 @@ const PasswordInput = forwardRef(function PasswordInput(
 export default PasswordInput;
 </file>
 
+<file path="components/features/contact/ContactFAQ.jsx">
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, Minus } from "lucide-react";
+
+const FAQS = [
+  {
+    q: "How can I track my order?",
+    a: "Once your order ships, you'll receive a tracking number by email that you can use to follow its progress in real time.",
+  },
+  {
+    q: "How long does delivery take?",
+    a: "Standard delivery typically takes 3-7 business days depending on your location.",
+  },
+  {
+    q: "What is your return policy?",
+    a: "Products may be returned within 7 days of delivery, provided they are unused and in original packaging.",
+  },
+  {
+    q: "How can I contact customer support?",
+    a: "You can reach us via phone, email, live chat, or the contact form on this page — we reply within 24 hours.",
+  },
+  {
+    q: "Do you ship internationally?",
+    a: "Yes, we offer free worldwide shipping on all orders.",
+  },
+  {
+    q: "Do you offer gift wrapping?",
+    a: "Yes, gift wrapping is available at checkout for a small additional fee.",
+  },
+];
+
+export default function ContactFAQ() {
+  const [openIndex, setOpenIndex] = useState(null);
+  const toggle = (i) => setOpenIndex((cur) => (cur === i ? null : i));
+
+  return (
+    <section className="w-full bg-[#FAFAFA] py-14">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <h2 className="font-serif text-3xl lg:text-4xl text-neutral-900">
+            Frequently Asked Questions
+          </h2>
+          <div
+            className="w-14 h-[3px] bg-[#C9A14A] mx-auto mt-3"
+            aria-hidden="true"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {FAQS.map((item, i) => {
+            const isOpen = openIndex === i;
+            return (
+              <div
+                key={item.q}
+                className="bg-white rounded-xl border border-neutral-100 overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggle(i)}
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                >
+                  <span className="text-sm font-medium text-neutral-800">
+                    {item.q}
+                  </span>
+                  {isOpen ? (
+                    <Minus
+                      className="w-4 h-4 text-[#800020] shrink-0"
+                      strokeWidth={2}
+                    />
+                  ) : (
+                    <Plus
+                      className="w-4 h-4 text-[#800020] shrink-0"
+                      strokeWidth={2}
+                    />
+                  )}
+                </button>
+                {isOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.25 }}
+                    className="px-5 pb-4"
+                  >
+                    <p className="text-xs text-neutral-600 leading-relaxed">
+                      {item.a}
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/contact/ContactForm.jsx">
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Send } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import LoadingSpinner from "@/components/features/auth/LoadingSpinner";
+import { contactFormSchema } from "@/lib/validations";
+
+const SUBJECTS = [
+  "General Inquiry",
+  "Order Support",
+  "Returns & Exchanges",
+  "Product Question",
+  "Partnership",
+  "Other",
+];
+
+export default function ContactForm() {
+  const [submitting, setSubmitting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(contactFormSchema),
+    mode: "onBlur",
+    defaultValues: { name: "", email: "", subject: "", message: "" },
+  });
+
+  // NOTE: there's no /contact endpoint in the backend yet — this simulates
+  // a send so the UI is fully usable. Wire it up to a real
+  // POST /api/v1/contact (controller → service → mailer) once that route exists.
+  const onSubmit = async () => {
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 900));
+    setSubmitting(false);
+    toast.success("Message sent", {
+      description:
+        "Thanks for reaching out — our team will get back to you within 24 hours.",
+    });
+    reset();
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-100 p-6 lg:p-8">
+      <h2 className="font-serif text-2xl text-neutral-900 mb-1">
+        Send Us a Message
+      </h2>
+      <p className="text-sm text-neutral-600 mb-6">
+        Fill out the form below and our team will get back to you.
+      </p>
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+        noValidate
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <Input
+              id="name"
+              placeholder="Your Name *"
+              aria-invalid={!!errors.name}
+              className="h-12 rounded-xl text-sm"
+              {...register("name")}
+            />
+            {errors.name && (
+              <p role="alert" className="text-[11px] text-destructive pl-1">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Input
+              id="email"
+              type="email"
+              placeholder="Email Address *"
+              aria-invalid={!!errors.email}
+              className="h-12 rounded-xl text-sm"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p role="alert" className="text-[11px] text-destructive pl-1">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="subject"
+            className="text-[10px] font-semibold tracking-[0.15em] uppercase text-neutral-800"
+          >
+            Subject *
+          </label>
+          <select
+            id="subject"
+            defaultValue=""
+            aria-invalid={!!errors.subject}
+            className="h-11 rounded-xl border border-input bg-input/30 px-3 text-sm text-neutral-700 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            {...register("subject")}
+          >
+            <option value="" disabled>
+              How can we help you?
+            </option>
+            {SUBJECTS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          {errors.subject && (
+            <p role="alert" className="text-[11px] text-destructive pl-1">
+              {errors.subject.message}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="message"
+            className="text-[10px] font-semibold tracking-[0.15em] uppercase text-neutral-800"
+          >
+            Your Message *
+          </label>
+          <textarea
+            id="message"
+            rows={5}
+            placeholder="Write your message here..."
+            aria-invalid={!!errors.message}
+            className="rounded-xl border border-input bg-input/30 px-3 py-2.5 text-sm text-neutral-700 outline-none resize-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            {...register("message")}
+          />
+          {errors.message && (
+            <p role="alert" className="text-[11px] text-destructive pl-1">
+              {errors.message.message}
+            </p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="mt-1 h-12 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white font-semibold tracking-[0.1em] text-xs uppercase shadow-lg shadow-[#5c0016]/20 gap-2"
+        >
+          {submitting ? (
+            <>
+              <LoadingSpinner /> Sending...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" /> Send Message
+            </>
+          )}
+        </Button>
+      </form>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/contact/ContactHero.jsx">
+"use client";
+
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Headphones, UserCheck } from "lucide-react";
+
+export default function ContactHero() {
+  return (
+    <section className="w-full bg-[#faf5f2]">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 items-center gap-10 py-14 lg:py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <p className="text-[11px] tracking-[0.3em] text-[#800020] font-semibold mb-4">
+            CONTACT US
+          </p>
+          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-[1.1] text-neutral-900 mb-4">
+            We&apos;re Here to <span className="text-[#800020]">Help</span> You
+          </h1>
+          <div className="w-14 h-[3px] bg-[#C9A14A] mb-5" aria-hidden="true" />
+          <p className="text-neutral-600 text-base leading-relaxed max-w-md mb-8">
+            Have a question, need assistance, or want to share feedback? Our
+            team is ready to help you. Get in touch with us anytime.
+          </p>
+
+          <div className="flex flex-wrap gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#f0dcd6] flex items-center justify-center shrink-0">
+                <Headphones
+                  className="w-5 h-5 text-[#800020]"
+                  strokeWidth={1.8}
+                />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-neutral-900">
+                  Fast Response
+                </div>
+                <div className="text-xs text-neutral-500">
+                  We reply within 24 hours
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#f0dcd6] flex items-center justify-center shrink-0">
+                <UserCheck
+                  className="w-5 h-5 text-[#800020]"
+                  strokeWidth={1.8}
+                />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-neutral-900">
+                  Customer First
+                </div>
+                <div className="text-xs text-neutral-500">
+                  Your satisfaction is our priority
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
+          className="relative aspect-[5/4] lg:aspect-[6/5] w-full"
+        >
+          <Image
+            src="/images/products/hero-products.png"
+            alt="Time Aura premium watches, wallets, and perfumes"
+            fill
+            priority
+            className="object-cover rounded-2xl"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+          />
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/contact/ContactInfoCards.jsx">
+"use client";
+
+import { motion } from "framer-motion";
+import { Phone, Mail, MapPin, MessageCircle } from "lucide-react";
+
+const ITEMS = [
+  {
+    icon: Phone,
+    title: "Phone",
+    lines: ["+923000000000", "Mon - Fri: 9:00 AM - 6:00 PM (EST)"],
+  },
+  {
+    icon: Mail,
+    title: "Email",
+    lines: ["timeaura-online@gmail.com", "We respond within 24 hours"],
+  },
+  {
+    icon: MapPin,
+    title: "Address",
+    lines: ["Lahore garrison University,", ",Pakistan"],
+  },
+  {
+    icon: MessageCircle,
+    title: "Live Chat",
+    lines: ["Available on our website", "Mon - Fri: 9:00 AM - 6:00 PM (EST)"],
+  },
+];
+
+export default function ContactInfoCards() {
+  return (
+    <section className="w-full bg-[#FAFAFA] py-12">
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {ITEMS.map((it, i) => (
+          <motion.div
+            key={it.title}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.4, delay: i * 0.08 }}
+            className="bg-white rounded-2xl border border-neutral-100 p-5 flex items-start gap-4"
+          >
+            <div className="w-11 h-11 rounded-full bg-[#5c0016] flex items-center justify-center shrink-0">
+              <it.icon className="w-5 h-5 text-white" strokeWidth={1.8} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+                {it.title}
+              </h3>
+              {it.lines.map((line) => (
+                <p
+                  key={line}
+                  className="text-xs text-neutral-500 leading-relaxed"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="components/features/contact/LocationMap.jsx">
+"use client";
+
+import { MapPin } from "lucide-react";
+
+export default function LocationMap() {
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-100 p-6 lg:p-8 flex flex-col h-full">
+      <h2 className="font-serif text-2xl text-neutral-900 mb-1">
+        Our Location
+      </h2>
+      <p className="text-sm text-neutral-600 mb-6">
+        Visit our office or drop us a letter. We&apos;d love to hear from you!
+      </p>
+
+      <div className="relative flex-1 min-h-[320px] rounded-xl overflow-hidden bg-[#f3ede6]">
+        <iframe
+          title="Lahore Garrison University"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3403.188129237966!2d74.44005497479702!3d31.464010649925747!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391908dd6138ade3%3A0xa6cc469044e1fbc1!2sLahore%20Garrison%20University.!5e0!3m2!1sen!2s!4v1783964176217!5m2!1sen!2s"
+          width="600"
+          height="450"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          className="absolute inset-0 w-full h-full"
+        />
+
+        <div className="absolute left-1/2 top-[44%] -translate-x-1/2">
+          <div className="w-9 h-9 rounded-full bg-[#5c0016] flex items-center justify-center shadow-lg">
+            <MapPin
+              className="w-5 h-5 text-white"
+              strokeWidth={2}
+              fill="currentColor"
+            />
+          </div>
+        </div>
+
+        <div className="absolute left-1/2 top-[55%] -translate-x-1/2 w-[260px] bg-white rounded-xl shadow-lg p-3">
+          <p className="text-xs font-semibold text-neutral-900 mb-0.5">
+            Lahore Garrison University
+          </p>
+          <p className="text-[11px] text-neutral-500 leading-relaxed">
+            Lahore, Pakistan
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="components/features/contact/NewsletterCTA.jsx">
+"use client";
+
+import { useState } from "react";
+import { Mail } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+
+export default function NewsletterCTA() {
+  const [email, setEmail] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!email) return;
+    // NOTE: no newsletter-subscription endpoint exists yet — wire this up
+    // to a real backend route when one is added.
+    toast.success("Subscribed", {
+      description: "You'll now receive our updates and offers.",
+    });
+    setEmail("");
+  };
+
+  return (
+    <section className="w-full bg-[#FAFAFA] pb-14">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="bg-[#5c0016] rounded-2xl px-6 py-8 md:px-10 flex flex-col md:flex-row items-center gap-6 md:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0">
+              <Mail className="w-5 h-5 text-[#5c0016]" strokeWidth={1.8} />
+            </div>
+            <div className="text-white">
+              <h3 className="font-serif text-xl lg:text-2xl mb-1">
+                Still have questions?
+              </h3>
+              <p className="text-xs md:text-sm text-white/70 max-w-sm">
+                Subscribe to get updates on orders, new arrivals, and exclusive
+                offers.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex w-full md:w-auto gap-2">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="flex-1 md:w-72 h-11 px-4 rounded-xl bg-white text-neutral-900 text-sm outline-none focus:ring-2 focus:ring-[#C9A14A]"
+              aria-label="Email address"
+            />
+            <Button
+              type="submit"
+              className="h-11 px-6 rounded-xl bg-white hover:bg-neutral-100 text-[#5c0016] text-sm font-semibold shrink-0"
+            >
+              Subscribe
+            </Button>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+</file>
+
 <file path="components/features/landing/AnnouncementBar.jsx">
 "use client";
 
@@ -3156,8 +3748,8 @@ export default function Footer() {
             </div>
           </div>
           <p className="text-sm text-neutral-600 leading-relaxed mb-4 max-w-xs">
-            SHOP PREMIUM. SHOP SMART.ches, wallets, and perfumes SHOP
-            PREMIUM. SHOP SMART. those who value timeless quality and style.
+            SHOP PREMIUM. SHOP SMART.ches, wallets, and perfumes SHOP PREMIUM.
+            SHOP SMART. those who value timeless quality and style.
           </p>
           <div className="flex gap-3">
             {[FaInstagram, FaFacebookF, FaYoutube, FaXTwitter].map(
@@ -3207,14 +3799,14 @@ export default function Footer() {
                 className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
                 strokeWidth={1.8}
               />
-              +1 (555) 123-4567
+              +923000000000
             </li>
             <li className="flex items-start gap-2">
               <Mail
                 className="w-4 h-4 text-[#800020] shrink-0 mt-0.5"
                 strokeWidth={1.8}
               />
-              support@timeaura.com
+              timeaura-online@gmail.com
             </li>
             <li className="flex items-start gap-2">
               <MapPin
@@ -3222,9 +3814,9 @@ export default function Footer() {
                 strokeWidth={1.8}
               />
               <span>
-                123 Time Aura Street,
+                LGU
                 <br />
-                New York, NY 10001, USA
+                Lahore
               </span>
             </li>
           </ul>
@@ -3233,7 +3825,7 @@ export default function Footer() {
 
       <div className="border-t border-neutral-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-500">
-          <p>© 2026 Time Aura. All Rights Reserved.</p>
+          <p>Developed by mmubashirdev © 2026 Time Aura. All Rights Reserved.</p>
           <div className="flex gap-6">
             <Link href="/privacy" className="hover:text-[#800020]">
               Privacy Policy
@@ -3405,7 +3997,7 @@ import { Search, ShoppingBag, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const NAV_LINKS = [
-  { label: "Home", href: "/", active: true },
+  { label: "Home", href: "/"},
   { label: "Collections", href: "/collections", hasDropdown: true },
   { label: "About Us", href: "/about" },
   { label: "Features", href: "/features" },
@@ -4498,6 +5090,13 @@ export const newPasswordSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+  export const contactFormSchema = z.object({
+    name: z.string().min(2, "Please enter your name"),
+    email: z.string().email("Please enter a valid email"),
+    subject: z.string().min(1, "Please select a subject"),
+    message: z.string().min(10, "Message must be at least 10 characters"),
+  });
 </file>
 
 <file path=".dockerignore">
@@ -4714,6 +5313,7 @@ export default nextConfig;
     "@hugeicons/react": "^1.1.9",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@studio-freight/lenis": "^1.0.42",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-query-devtools": "^5.101.2",
     "class-variance-authority": "^0.7.1",

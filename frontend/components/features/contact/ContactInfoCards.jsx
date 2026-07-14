@@ -7,7 +7,7 @@ const ITEMS = [
   {
     icon: Phone,
     title: "Phone",
-    lines: ["+923194681979", "Mon - Fri: 9:00 AM - 6:00 PM (EST)"],
+    lines: ["+923000000000", "Mon - Fri: 9:00 AM - 6:00 PM (EST)"],
   },
   {
     icon: Mail,

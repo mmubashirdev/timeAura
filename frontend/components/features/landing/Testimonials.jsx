@@ -8,17 +8,17 @@ const REVIEWS = [
   {
     text: "The craftsmanship and quality are beyond exceptional. Time Aura is now my go-to brand!",
     name: "Ahmed ",
-    avatar: "/images/products/avatar-1.jpg",
+    avatar: "/images/products/review-avatar-1.jpg",
   },
   {
     text: "Absolutely love the wallet I bought. Elegant, durable and worth every penny.",
     name: "Sarah ",
-    avatar: "/images/products/avatar-2.jpg",
+    avatar: "/images/products/review-avatar-2.jpg",
   },
   {
     text: "The perfumes are long-lasting and premium. I get compliments every time!",
     name: "Abdullah",
-    avatar: "/images/products/avatar-3.jpg",
+    avatar: "/images/products/review-avatar-3.jpg",
   },
 ];
 
