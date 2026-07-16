@@ -18,6 +18,7 @@ function write(items) {
 export const cartStore = {
   get: read,
   count: () => read().reduce((sum, i) => sum + i.qty, 0),
+
   add: (product, qty = 1) => {
     const items = read();
     const existing = items.find((i) => i.id === product.id);
@@ -33,7 +34,31 @@ export const cartStore = {
       });
     write(items);
   },
+
   remove: (id) => write(read().filter((i) => i.id !== id)),
+
+  update: (id, qty) => {
+    const safeQty = Math.max(1, parseInt(qty, 10) || 1);
+    const items = read().map((i) => (i.id === id ? { ...i, qty: safeQty } : i));
+    write(items);
+  },
+
+  increment: (id) => {
+    const items = read().map((i) =>
+      i.id === id ? { ...i, qty: i.qty + 1 } : i,
+    );
+    write(items);
+  },
+
+  decrement: (id) => {
+    const items = read().map((i) =>
+      i.id === id ? { ...i, qty: Math.max(1, i.qty - 1) } : i,
+    );
+    write(items);
+  },
+
+  clear: () => write([]),
+
   subscribe: (cb) => {
     if (typeof window === "undefined") return () => {};
     const handler = () => cb(read());
