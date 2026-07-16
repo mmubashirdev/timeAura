@@ -16,7 +16,23 @@ export function useCart() {
     [],
   );
   const remove = useCallback((id) => cartStore.remove(id), []);
-  const count = items.reduce((s, i) => s + i.qty, 0);
+  const update = useCallback((id, qty) => cartStore.update(id, qty), []);
+  const increment = useCallback((id) => cartStore.increment(id), []);
+  const decrement = useCallback((id) => cartStore.decrement(id), []);
+  const clear = useCallback(() => cartStore.clear(), []);
 
-  return { items, add, remove, count };
+  const count = items.reduce((s, i) => s + i.qty, 0);
+  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+  return {
+    items,
+    count,
+    subtotal,
+    add,
+    remove,
+    update,
+    increment,
+    decrement,
+    clear,
+  };
 }

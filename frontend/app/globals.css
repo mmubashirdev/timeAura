@@ -35,6 +35,35 @@
   --border: #e5e5e5;
   --input: #e5e5e5;
   --ring: #800020;
+
+  /* ═══════════════════════════════════════════════ */
+  /* ADMIN DASHBOARD — CSS Variables                */
+  /* ═══════════════════════════════════════════════ */
+
+  /* Admin: Cream Palette */
+  --admincream-bg: #faf6f0;
+  --admincream-panel: #ffffff;
+  --admincream-muted: #f3ece3;
+
+  /* Admin: Maroon Palette */
+  --adminmaroon: #7a1f2e;
+  --adminmaroon-dark: #5c1622;
+  --adminmaroon-light: #9a3b49;
+
+  /* Admin: Status Colors */
+  --adminstatus-pending: #e3a23a;
+  --adminstatus-processing: #7a1f2e;
+  --adminstatus-shipped: #5b8def;
+  --adminstatus-delivered: #4e9a6b;
+  --adminstatus-completed: #4e9a6b;
+
+  /* Admin: Ink (text) Colors */
+  --adminink-900: #2b211d;
+  --adminink-600: #6b6058;
+  --adminink-400: #a79e95;
+
+  /* Admin: Border */
+  --adminborder: #eae1d6;
 }
 
 .dark {
@@ -76,6 +105,61 @@
 
   --font-serif: var(--font-playfair);
   --font-sans: var(--font-inter);
+
+  /* ═══════════════════════════════════════════════ */
+  /* ADMIN DASHBOARD — Tailwind Color Utilities     */
+  /* ═══════════════════════════════════════════════ */
+
+  /* Cream Palette → bg-admincream-bg, bg-admincream-panel, bg-admincream-muted */
+  --color-admincream-bg: var(--admincream-bg);
+  --color-admincream-panel: var(--admincream-panel);
+  --color-admincream-muted: var(--admincream-muted);
+
+  /* Maroon Palette → bg-adminmaroon, text-adminmaroon, etc. */
+  --color-adminmaroon: var(--adminmaroon);
+  --color-adminmaroon-dark: var(--adminmaroon-dark);
+  --color-adminmaroon-light: var(--adminmaroon-light);
+
+  /* Status Colors → text-adminstatus-pending, etc. */
+  --color-adminstatus-pending: var(--adminstatus-pending);
+  --color-adminstatus-processing: var(--adminstatus-processing);
+  --color-adminstatus-shipped: var(--adminstatus-shipped);
+  --color-adminstatus-delivered: var(--adminstatus-delivered);
+  --color-adminstatus-completed: var(--adminstatus-completed);
+
+  /* Ink Text Colors → text-adminink-900, text-adminink-600, text-adminink-400 */
+  --color-adminink-900: var(--adminink-900);
+  --color-adminink-600: var(--adminink-600);
+  --color-adminink-400: var(--adminink-400);
+
+  /* Border → border-adminborder, divide-adminborder */
+  --color-adminborder: var(--adminborder);
+
+  /* ═══════════════════════════════════════════════ */
+  /* ADMIN DASHBOARD — Color Aliases (Shorthand)   */
+  /* ═══════════════════════════════════════════════ */
+
+  /* Cream Palette Aliases */
+  --color-cream-bg: var(--admincream-bg);
+  --color-cream-panel: var(--admincream-panel);
+  --color-cream-muted: var(--admincream-muted);
+
+  /* Maroon Palette Aliases */
+  --color-maroon: var(--adminmaroon);
+  --color-maroon-dark: var(--adminmaroon-dark);
+  --color-maroon-light: var(--adminmaroon-light);
+
+  /* Status Colors Aliases */
+  --color-status-pending: var(--adminstatus-pending);
+  --color-status-processing: var(--adminstatus-processing);
+  --color-status-shipped: var(--adminstatus-shipped);
+  --color-status-delivered: var(--adminstatus-delivered);
+  --color-status-completed: var(--adminstatus-completed);
+
+  /* Ink Text Color Aliases */
+  --color-ink-900: var(--adminink-900);
+  --color-ink-600: var(--adminink-600);
+  --color-ink-400: var(--adminink-400);
 }
 
 * {
@@ -160,4 +244,3 @@ html, body {
     scroll-behavior: auto !important;
   }
 }
-

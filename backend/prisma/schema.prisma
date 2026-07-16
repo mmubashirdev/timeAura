@@ -46,15 +46,28 @@ model Product {
   description     String?
   categoryId      Int
   category        Category         @relation(fields: [categoryId], references: [id])
-  basePrice       Int              // stored in whole PKR, no floats
-  compareAtPrice  Int?             // the "Rs. 5,999" struck-through price
+  brand           String
+  material        String
+  color           String
+  colorHex        String
+  basePrice       Int
+  compareAtPrice  Int?
+  rating          Float            @default(0)
+  reviewCount     Int              @default(0)
+  isNew           Boolean          @default(false)
+  isSale          Boolean          @default(false)
+  image           String           // primary image path/URL — kept alongside ProductImage[] for future gallery support
   images          ProductImage[]
   variants        ProductVariant[]
+  cartItems       CartItem[]
   isActive        Boolean          @default(true)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   @@index([categoryId])
+  @@index([brand])
+  @@index([material])
+  @@index([color])
 }
 
 model ProductImage {
@@ -100,6 +113,7 @@ model User {
   otpTokens           OtpToken[]
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  cart Cart?
 }
 enum OtpType {
   EMAIL_VERIFICATION
@@ -158,3 +172,41 @@ model OrderItem {
   unitPrice   Int             // price AT TIME OF ORDER, not a live reference
 }
 
+model Cart {
+  id         Int        @id @default(autoincrement())
+  userId     Int?       @unique
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestToken String?    @unique // opaque id stored in an httpOnly cookie for anonymous carts
+  couponCode String?
+  items      CartItem[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+}
+
+enum CouponType {
+  PERCENT
+  FLAT
+}
+
+model Coupon {
+  id        Int        @id @default(autoincrement())
+  code      String     @unique
+  type      CouponType
+  value     Int
+  label     String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+}
