@@ -7,7 +7,7 @@ export function useCart() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    setItems(cartStore.get());
+    // Subscribe first; cartStore.get() will be pushed via subscription callback.
     return cartStore.subscribe(setItems);
   }, []);
 

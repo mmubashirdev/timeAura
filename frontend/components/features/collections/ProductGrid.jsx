@@ -2,7 +2,15 @@
 
 import ProductCard from "./ProductCard";
 
-export default function ProductGrid({ products, view }) {
+export default function ProductGrid({ products, view, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center">
+        <p className="font-serif text-2xl text-neutral-900 mb-2">Loading…</p>
+      </div>
+    );
+  }
+
   if (products.length === 0) {
     return (
       <div className="py-20 text-center">

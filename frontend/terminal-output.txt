@@ -1,0 +1,390 @@
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_shared_lib_0guaks3._.js"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/[root-of-the-server]__1si4dqb._.js"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/1-4i_next_app_0yrdk3r.js"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/components_1b5419m._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/stadocktic/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_dist_1ybzpk2._.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/[root-of-the-server]__02sxxph._.js"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/node_modules_next_app_0yrdk3r.js.map"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/chunks" for write to "/app/.next/dev/static/chunks/pages__error_0du2_q-._.js"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
+---------------------------
+failed to create directory "/app/.next/dev/static/media" for write to "/app/.next/dev/static/media/2c55a0e60120577a-s.0-dom-5bn10r2.woff2"
+
+Caused by:
+- Permission denied (os error 13)
