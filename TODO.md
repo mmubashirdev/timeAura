@@ -1,12 +1,16 @@
 # TODO
 
-## Task: Fix signup form scroll bar + cut heading
+- [ ] Implement collections API wiring:
+  - [x] Replace static `PRODUCTS` usage in `frontend/app/collections/page.js` with `productsApi.list(params)`.
+  - [x] Replace sidebar option sources in `frontend/app/collections/page.js` via `productsApi.filters()`.
 
-- [x] Inspect auth layout + globals CSS to find causes of unwanted scroll and top clipping
+- [ ] Update `FiltersSidebar.jsx` to consume filter option lists via props (no static `@/lib/data/products` constants).
+- [ ] Refactor cart state to call backend:
+  - [ ] Update `frontend/hooks/useCart.js` to fetch from `cartApi.get()` and mutate via `cartApi`.
+  - [ ] Add merge flow `cartApi.merge(cartStore.get())` after successful login.
 
-- [ ] Update `frontend/app/globals.css` and/or auth layout CSS/classes so:
-  - [ ] Remove page-level scroll bar caused by `overflow:hidden`/height mismatch
-  - [ ] Prevent heading from being clipped (top padding / min-height / align)
-- [x] Run frontend lint/build (if available) to ensure no CSS/JS errors
-
-- [ ] Quick smoke test: signup page renders without scrollbar and heading fully visible
+- [ ] Trigger merge right after login:
+  - [ ] Update `frontend/app/login/page.js` to dispatch an event after token save.
+- [ ] Verify:
+  - [ ] Run frontend lint/typecheck/build.
+  - [ ] Manually verify collections filtering and cart merge behavior.

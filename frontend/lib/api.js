@@ -73,3 +73,100 @@ export const authApi = {
   // GET /auth/me  (requires Bearer token)
   me: () => request("/auth/me", { auth: true }),
 };
+
+export const productsApi = {
+  // GET /products?category=&min=&max=&brands=&materials=&colors=&rating=&sort=&page=&pageSize=
+  list: (params) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v != null && v !== ""),
+    ).toString();
+    return request(`/products?${qs}`);
+  },
+  filters: () => request("/products/filters"),
+  getBySlug: (slug) => request(`/products/${slug}`),
+  getById: (id) => request(`/products/id/${id}`),
+  getRelated: (slug) => request(`/products/${slug}/related`),
+  create: (data) => request("/products", { method: "POST", body: data, auth: true }),
+  update: (id, data) => request(`/products/${id}`, { method: "PUT", body: data, auth: true }),
+  delete: (id) => request(`/products/${id}`, { method: "DELETE", auth: true }),
+  adjustStock: (id, data) => request(`/products/${id}/adjust-stock`, { method: "POST", body: data, auth: true }),
+};
+
+export const cartApi = {
+  get: () => request("/cart"),
+  addItem: ({ productId, quantity }) =>
+    request("/cart/items", { method: "POST", body: { productId, quantity } }),
+  updateItem: (productId, quantity) =>
+    request(`/cart/items/${productId}`, {
+      method: "PATCH",
+      body: { quantity },
+    }),
+  removeItem: (productId) =>
+    request(`/cart/items/${productId}`, { method: "DELETE" }),
+  clear: () => request("/cart", { method: "DELETE" }),
+  applyCoupon: (code) =>
+    request("/cart/coupon", { method: "POST", body: { code } }),
+  removeCoupon: () => request("/cart/coupon", { method: "DELETE" }),
+  merge: (items) =>
+    request("/cart/merge", { method: "POST", body: { items }, auth: true }),
+};
+
+export const categoriesApi = {
+  list: () => request("/categories"),
+  getById: (id) => request(`/categories/${id}`),
+  create: (data) => request("/categories", { method: "POST", body: data, auth: true }),
+  update: (id, data) => request(`/categories/${id}`, { method: "PUT", body: data, auth: true }),
+  delete: (id) => request(`/categories/${id}`, { method: "DELETE", auth: true }),
+};
+
+export const ordersApi = {
+  list: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v != null && v !== ""),
+    ).toString();
+    return request(`/orders?${qs}`, { auth: true });
+  },
+  getById: (id) => request(`/orders/${id}`, { auth: true }),
+  create: (data) => request("/orders", { method: "POST", body: data }),
+  updateStatus: (id, data) => request(`/orders/${id}/status`, { method: "PUT", body: data, auth: true }),
+};
+
+export const customersApi = {
+  list: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v != null && v !== ""),
+    ).toString();
+    return request(`/customers?${qs}`, { auth: true });
+  },
+  getById: (id) => request(`/customers/${id}`, { auth: true }),
+};
+
+export const notificationsApi = {
+  list: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v != null && v !== ""),
+    ).toString();
+    return request(`/notifications?${qs}`, { auth: true });
+  },
+  markRead: (id) => request(`/notifications/${id}/read`, { method: "PATCH", auth: true }),
+  markAllRead: () => request(`/notifications/read-all`, { method: "POST", auth: true }),
+};
+
+export const uploadsApi = {
+  uploadImage: async (file) => {
+    // Note: This requires FormData, so we handle it specially instead of using request() directly for body
+    const token = getAccessToken();
+    const formData = new FormData();
+    formData.append("image", file);
+    
+    const res = await fetch(`${API_BASE_URL}/uploads/single`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Upload failed");
+    return data;
+  },
+};

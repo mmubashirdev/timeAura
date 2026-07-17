@@ -7,7 +7,6 @@ export function useWishlist() {
   const [ids, setIds] = useState([]);
 
   useEffect(() => {
-    setIds(wishlistStore.get());
     return wishlistStore.subscribe(setIds);
   }, []);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -8,8 +8,7 @@ import AnnouncementBar from "@/components/features/landing/AnnouncementBar";
 import Navbar from "@/components/features/landing/Navbar";
 import Footer from "@/components/features/landing/Footer";
 import TrustStrip from "@/components/features/collections/TrustStrip";
-
-import { PRODUCTS } from "@/lib/data/products";
+import { productsApi } from "@/lib/api";
 
 import Breadcrumb from "./_components/Breadcrumb";
 import ProductGallery from "./_components/ProductGallery";
@@ -21,17 +20,38 @@ import RelatedProducts from "./_components/RelatedProducts";
 export default function ProductDetailPage({ params }) {
   // Next 16: params is a Promise
   const { slug } = use(params);
+  
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const product = useMemo(() => PRODUCTS.find((p) => p.slug === slug), [slug]);
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const { data } = await productsApi.getBySlug(slug);
+        setProduct(data.product);
+        const { data: relatedData } = await productsApi.getRelated(slug);
+        setRelated(relatedData.products || []);
+      } catch (err) {
+        setError(err.message || "Failed to load product");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [slug]);
 
-  const related = useMemo(() => {
-    if (!product) return [];
-    return PRODUCTS.filter(
-      (p) => p.id !== product.id && p.category === product.category,
-    ).slice(0, 6);
-  }, [product]);
+  if (loading) {
+    return (
+      <main className="w-full bg-[#FAFAFA] text-neutral-900 min-h-screen flex items-center justify-center">
+        <p className="text-neutral-500">Loading product...</p>
+      </main>
+    );
+  }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <main className="w-full bg-[#FAFAFA] text-neutral-900 min-h-screen">
         <AnnouncementBar />
