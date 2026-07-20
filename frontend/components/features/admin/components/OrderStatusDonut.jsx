@@ -2,8 +2,9 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { orderStatusData, STATUS_COLORS } from "../data/dashboardData";
 
-export default function OrderStatusDonut() {
-  const total = orderStatusData.reduce((sum, d) => sum + d.value, 0);
+export default function OrderStatusDonut({ data }) {
+  const chartData = data && data.length > 0 ? data : orderStatusData;
+  const total = chartData.reduce((sum, d) => sum + d.value, 0);
 
   return (
     <div className="rounded-2xl bg-cream-panel p-5 shadow-[0_2px_12px_rgba(43,33,29,0.06)]">
@@ -17,7 +18,7 @@ export default function OrderStatusDonut() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={orderStatusData}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 innerRadius={55}
@@ -25,7 +26,7 @@ export default function OrderStatusDonut() {
                 paddingAngle={2}
                 dataKey="value"
               >
-                {orderStatusData.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={index} fill={entry.color} />
                 ))}
               </Pie>
@@ -42,7 +43,7 @@ export default function OrderStatusDonut() {
 
         {/* Legend */}
         <div className="flex flex-col gap-2.5">
-          {orderStatusData.map((item) => (
+          {chartData.map((item) => (
             <div key={item.name} className="flex items-center gap-2">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"

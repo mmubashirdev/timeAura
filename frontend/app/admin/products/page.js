@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
-import { productsApi } from "@/lib/api";
+import { productsApi, categoriesApi } from "@/lib/api";
+import { formatPKR } from "@/lib/format";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -17,7 +18,17 @@ export default function AdminProductsPage() {
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState("createdAt_desc");
+  const [sort, setSort] = useState("newest");
+  const [categories, setCategories] = useState([]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await categoriesApi.list();
+      setCategories(data || []);
+    } catch (err) {
+      console.error("Failed to load categories", err);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -27,12 +38,13 @@ export default function AdminProductsPage() {
         page,
         pageSize: 10,
         sort,
-        ...(search && { q: search }), // if we have a search param
+        includeInactive: true, // admin list includes soft deleted/inactive
+        ...(search && { search }),
         ...(category && { category }),
         ...(status && { status }),
       };
       const { data } = await productsApi.list(params);
-      setProducts(data.products || []);
+      setProducts(data.items || []);
       setTotal(data.pagination?.total || 0);
       setTotalPages(data.pagination?.totalPages || 1);
     } catch (err) {
@@ -41,6 +53,10 @@ export default function AdminProductsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchProducts();
@@ -94,9 +110,11 @@ export default function AdminProductsPage() {
           className="w-full sm:w-auto px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#800020]"
         >
           <option value="">All Categories</option>
-          <option value="luxury-watches">Luxury Watches</option>
-          <option value="smart-watches">Smart Watches</option>
-          <option value="accessories">Accessories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
         </select>
         
         <select
@@ -115,10 +133,10 @@ export default function AdminProductsPage() {
           onChange={(e) => { setSort(e.target.value); setPage(1); }}
           className="w-full sm:w-auto px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#800020]"
         >
-          <option value="createdAt_desc">Newest First</option>
-          <option value="createdAt_asc">Oldest First</option>
-          <option value="price_asc">Price (Low to High)</option>
-          <option value="price_desc">Price (High to Low)</option>
+          <option value="newest">Newest First</option>
+          <option value="featured">Featured First</option>
+          <option value="price-asc">Price (Low to High)</option>
+          <option value="price-desc">Price (High to Low)</option>
         </select>
       </div>
 
@@ -172,7 +190,7 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">${product.price?.toFixed(2)}</td>
+                  <td className="px-6 py-4">{formatPKR(product.price)}</td>
                   <td className="px-6 py-4">{product.stockQuantity}</td>
                   <td className="px-6 py-4">
                     <span

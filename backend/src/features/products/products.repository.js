@@ -101,6 +101,10 @@ class ProductsRepository {
     return prisma.product.update({
       where: { id },
       data: { isActive: false },
+      include: {
+        category: true,
+        images: { orderBy: { position: "asc" } },
+      },
     });
   }
 

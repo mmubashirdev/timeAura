@@ -10,14 +10,15 @@ const Product3DViewer = dynamic(() => import("./Product3DViewer"), {
 });
 
 export default function ProductGallery({ product }) {
-  // Build a small gallery from the single product.image (mock catalog only has one)
-  const images = [
-    product.image,
-    product.image,
-    product.image,
-    product.image,
-    product.image,
-  ];
+  // Use real images array if available, fallback to thumbnail, filter out empties
+  const sourceImages = product.images?.length > 0 
+    ? product.images 
+    : [product.thumbnailImage || product.image];
+
+  const images = sourceImages.filter(img => typeof img === 'string' && img.trim() !== '');
+  if (images.length === 0) {
+    images.push("/images/placeholder.jpg"); // Fallback if absolutely no image exists
+  }
 
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState(false);

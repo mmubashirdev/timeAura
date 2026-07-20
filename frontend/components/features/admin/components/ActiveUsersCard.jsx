@@ -9,14 +9,17 @@ import {
   Tooltip,
 } from "recharts";
 import SectionCard from "./SectionCard";
-import { activeUsersChartData } from "../data/dashboardData";
+import { activeUsersChartData as mockChartData } from "../data/dashboardData";
 
-export default function ActiveUsersCard() {
+export default function ActiveUsersCard({ data, activeUsersCount }) {
+  const chartData = data && data.length > 0 ? data : mockChartData;
+  const countVal = activeUsersCount !== undefined ? activeUsersCount : 2350;
+
   return (
-    <SectionCard title="Active Users" action="View All" actionHref="#">
+    <SectionCard title="Active Users" action="View All" actionHref="/admin/users">
       {/* Stats */}
       <div className="mb-4">
-        <p className="text-3xl font-bold text-ink-900">2,350</p>
+        <p className="text-3xl font-bold text-ink-900">{countVal.toLocaleString()}</p>
         <p className="text-xs text-ink-400">Active Users</p>
         <div className="mt-1 flex items-center gap-1 text-[11px]">
           <TrendingUp className="h-3 w-3 text-status-delivered" />
@@ -31,7 +34,7 @@ export default function ActiveUsersCard() {
       <div className="h-[140px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={activeUsersChartData}
+            data={chartData}
             margin={{ top: 5, right: 0, left: -25, bottom: 0 }}
           >
             <XAxis

@@ -38,7 +38,8 @@ function CollectionsContent() {
       setLoading(true);
       try {
         // Sidebar counts / filter option counts
-        const f = await productsApi.filters();
+        const filtersRes = await productsApi.filters();
+        const f = filtersRes?.data || filtersRes;
         if (!ignore) {
           setCounts({
             categories: f?.categories ?? { all: f?.totalCount ?? 0 },
@@ -63,10 +64,12 @@ function CollectionsContent() {
         const res = await productsApi.list(params);
         if (ignore) return;
 
-        const items = Array.isArray(res) ? res : (res?.items ?? []);
-        const t = Array.isArray(res)
-          ? res.length
-          : (res?.total ?? res?.totalCount ?? items.length);
+        const dataObj = res?.data || res;
+        const items = Array.isArray(dataObj) ? dataObj : (dataObj?.items ?? []);
+        const pagination = dataObj?.pagination || {};
+        const t = Array.isArray(dataObj)
+          ? dataObj.length
+          : (pagination.total ?? dataObj?.total ?? dataObj?.totalCount ?? items.length);
 
         setProducts(items);
         setTotal(t);

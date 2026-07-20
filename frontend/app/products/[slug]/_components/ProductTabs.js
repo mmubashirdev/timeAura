@@ -74,7 +74,7 @@ export default function ProductTabs({ product }) {
           </div>
           <div className="relative aspect-video rounded-xl overflow-hidden bg-neutral-50">
             <Image
-              src={product.image}
+              src={product.images?.find(img => typeof img === 'string' && img.trim() !== '') || product.thumbnailImage || product.image || "/images/placeholder.jpg"}
               alt={product.name}
               fill
               className="object-contain p-8"

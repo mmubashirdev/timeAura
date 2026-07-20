@@ -99,7 +99,15 @@ const productSchema = z.object({
 
   warranty: z.string().nullable().optional(),
 
-  images: z.array(z.string()).default([]),
+  images: z
+    .preprocess(
+      (val) =>
+        Array.isArray(val)
+          ? val.filter((item) => typeof item === "string" && item.length > 0)
+          : [],
+      z.array(z.string()),
+    )
+    .default([]),
 });
 
 // ---------------------------------------------

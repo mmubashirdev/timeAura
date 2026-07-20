@@ -12,8 +12,11 @@ import {
 } from "recharts";
 import { ordersChartData } from "../data/dashboardData";
 
-export default function OrdersOverviewChart() {
+export default function OrdersOverviewChart({ data }) {
   const [filter, setFilter] = useState("This Week");
+  const chartData = data && data.length > 0 ? data : ordersChartData;
+  const maxVal = Math.max(...chartData.map(d => d.orders), 10);
+  const roundedMax = Math.ceil(maxVal / 10) * 10;
 
   return (
     <div className="rounded-2xl bg-cream-panel p-5 shadow-[0_2px_12px_rgba(43,33,29,0.06)]">
@@ -44,7 +47,7 @@ export default function OrdersOverviewChart() {
       <div className="h-[250px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={ordersChartData}
+            data={chartData}
             margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
           >
             <defs>
@@ -68,8 +71,8 @@ export default function OrdersOverviewChart() {
               tick={{ fill: "#A79E95", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
-              domain={[0, 500]}
-              ticks={[0, 100, 200, 300, 400, 500]}
+              domain={[0, roundedMax]}
+              ticks={[0, Math.round(roundedMax / 2), roundedMax]}
             />
             <Tooltip
               contentStyle={{

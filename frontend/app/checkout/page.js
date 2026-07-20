@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cartApi, ordersApi } from "@/lib/api";
+import { formatPKR } from "@/lib/format";
 import Navbar from "@/components/features/landing/Navbar";
 import Footer from "@/components/features/landing/Footer";
 
@@ -175,14 +176,14 @@ export default function CheckoutPage() {
                     <p className="font-medium">{item.product.name}</p>
                     <p className="text-sm text-neutral-500">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium">{formatPKR(item.product.price * item.quantity)}</p>
                 </div>
               ))}
             </div>
             <div className="border-t pt-4">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
-                <span>${cart?.totalAmount?.toFixed(2)}</span>
+                <span>{formatPKR(cart?.totalAmount)}</span>
               </div>
             </div>
           </div>

@@ -49,7 +49,7 @@ export default function RelatedProducts({ products = [] }) {
             <Link href={`/products/${p.slug}`} className="block">
               <div className="relative aspect-square bg-neutral-50">
                 <Image
-                  src={p.image}
+                  src={p.thumbnailImage || p.image || "/images/products/placeholder.png"}
                   alt={p.name}
                   fill
                   className="object-contain p-5"

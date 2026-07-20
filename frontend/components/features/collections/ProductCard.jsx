@@ -7,11 +7,21 @@ import { toast } from "sonner";
 import { formatPKR } from "@/lib/format";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useCart } from "@/hooks/useCart";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function ProductCard({ product, view = "grid" }) {
   const { has, toggle } = useWishlist();
   const { add } = useCart();
+  const { data: userResp } = useCurrentUser();
+  const user = userResp?.data?.user;
+  const router = useRouter();
   const wished = has(product.id);
+
+  const displayImage = product.thumbnailImage || 
+    (product.images?.length > 0 ? product.images.find(img => typeof img === 'string' && img.trim() !== '') : null) || 
+    product.image || 
+    "/images/placeholder.jpg";
 
   const handleWish = (e) => {
     e.preventDefault();
@@ -21,6 +31,11 @@ export default function ProductCard({ product, view = "grid" }) {
 
   const handleAdd = (e) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("Please create an account to add items to your cart");
+      router.push("/register");
+      return;
+    }
     add(product, 1);
     toast.success(`${product.name} added to cart`);
   };
@@ -33,7 +48,7 @@ export default function ProductCard({ product, view = "grid" }) {
       >
         <div className="relative w-32 h-32 shrink-0 bg-neutral-50 rounded-lg overflow-hidden">
           <Image
-            src={product.image}
+            src={displayImage}
             alt={product.name}
             fill
             className="object-contain p-3"
@@ -104,7 +119,7 @@ export default function ProductCard({ product, view = "grid" }) {
 
       <div className="relative aspect-square bg-neutral-50">
         <Image
-          src={product.image}
+          src={displayImage}
           alt={product.name}
           fill
           className="object-contain p-6 group-hover:scale-105 transition-transform"

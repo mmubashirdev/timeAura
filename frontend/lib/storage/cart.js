@@ -29,7 +29,13 @@ export const cartStore = {
         slug: product.slug,
         name: product.name,
         price: product.price,
-        image: product.image,
+        // Backend DTO uses thumbnailImage; fall back to image for legacy data
+        image: product.thumbnailImage || product.image || "",
+        color: product.color || "",
+        material: product.material || "",
+        brand: product.brand || "",
+        categoryLabel: product.categoryLabel || "",
+        compareAtPrice: product.discountPrice || product.compareAtPrice || null,
         qty,
       });
     write(items);
@@ -64,6 +70,8 @@ export const cartStore = {
     const handler = () => cb(read());
     window.addEventListener(EVENT, handler);
     window.addEventListener("storage", handler);
+    // Immediately push current state so the consumer doesn't start empty
+    handler();
     return () => {
       window.removeEventListener(EVENT, handler);
       window.removeEventListener("storage", handler);

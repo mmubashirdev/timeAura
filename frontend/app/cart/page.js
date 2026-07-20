@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,36 +16,18 @@ import EmptyCart from "@/components/features/cart/EmptyCart";
 import RecommendedProducts from "@/components/features/cart/RecommendedProducts";
 
 import { useCart } from "@/hooks/useCart";
-import { PRODUCTS } from "@/lib/data/products";
 import { calcDiscount, calcShipping, calcTax, calcTotal } from "@/lib/cart";
 
 export default function CartPage() {
   const { items, subtotal, remove, update, increment, decrement } = useCart();
   const [coupon, setCoupon] = useState(null);
 
-  // Enrich cart items with full product data (variant, brand, compareAtPrice, etc.)
-  const enrichedItems = useMemo(() => {
-    return items.map((item) => {
-      const full = PRODUCTS.find((p) => p.id === item.id);
-      return { ...full, ...item };
-    });
-  }, [items]);
+  // Items from the store already carry all needed fields (image, color, material, etc.).
+  // No static-data enrichment needed.
+  const enrichedItems = items;
 
-  // Recommend items from PRODUCTS not currently in the cart
-  const recommended = useMemo(() => {
-    const inCart = new Set(items.map((i) => i.id));
-    const pool = PRODUCTS.filter((p) => !inCart.has(p.id));
-    // Mix categories: take a couple from each
-    const cats = ["watches", "wallets", "perfumes"];
-    const picks = [];
-    cats.forEach((cat) => {
-      pool
-        .filter((p) => p.category === cat)
-        .slice(0, 2)
-        .forEach((p) => picks.push(p));
-    });
-    return picks.slice(0, 6);
-  }, [items]);
+  // No static recommended products — keep section hidden
+  const recommended = [];
 
   const discount = calcDiscount(subtotal, coupon);
   const shipping = calcShipping(subtotal);
@@ -130,6 +112,7 @@ export default function CartPage() {
             {/* Right column — summary */}
             <div className="lg:col-span-1">
               <CartSummary
+                items={items}
                 itemCount={items.reduce((s, i) => s + i.qty, 0)}
                 subtotal={subtotal}
                 shipping={shipping}

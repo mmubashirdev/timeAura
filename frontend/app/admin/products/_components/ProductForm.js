@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { uploadsApi } from "@/lib/api";
+import { uploadsApi, categoriesApi } from "@/lib/api";
 import { X, Upload, Plus } from "lucide-react";
 
 export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
   const router = useRouter();
-  
+  const [categories, setCategories] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [specKey, setSpecKey] = useState("");
+  const [specValue, setSpecValue] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
     shortDescription: "",
-    category: "",
+    categoryId: "",
     brand: "",
     sku: "",
     price: "",
@@ -21,12 +25,26 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
     stockQuantity: "",
     status: "DRAFT",
     images: [],
+    color: "",
+    material: "",
+    weight: "",
+    dimensions: "",
+    warranty: "",
+    featuredProduct: false,
     specifications: {},
   });
 
-  const [specKey, setSpecKey] = useState("");
-  const [specValue, setSpecValue] = useState("");
-  const [uploading, setUploading] = useState(false);
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const { data } = await categoriesApi.list();
+        setCategories(data || []);
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    }
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -35,7 +53,7 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
         slug: initialData.slug || "",
         description: initialData.description || "",
         shortDescription: initialData.shortDescription || "",
-        category: initialData.category || "",
+        categoryId: initialData.categoryId || "",
         brand: initialData.brand || "",
         sku: initialData.sku || "",
         price: initialData.price || "",
@@ -43,17 +61,23 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
         stockQuantity: initialData.stockQuantity || "",
         status: initialData.status || "DRAFT",
         images: initialData.images || [],
+        color: initialData.color || "",
+        material: initialData.material || "",
+        weight: initialData.weight || "",
+        dimensions: initialData.dimensions || "",
+        warranty: initialData.warranty || "",
+        featuredProduct: !!initialData.featuredProduct,
         specifications: initialData.specifications || {},
       });
     }
   }, [initialData]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => {
-      const updated = { ...prev, [name]: value };
+      const val = type === "checkbox" ? checked : value;
+      const updated = { ...prev, [name]: val };
       if (name === "name" && !initialData) {
-        // Auto-generate slug for new products
         updated.slug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
       }
       return updated;
@@ -108,12 +132,17 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Parse numeric values before submitting
+    // Filter out any null/undefined/falsy entries that may have crept in
+    const cleanedImages = formData.images.filter((img) => typeof img === "string" && img.length > 0);
     const payload = {
       ...formData,
+      images: cleanedImages,
+      categoryId: parseInt(formData.categoryId, 10),
       price: parseFloat(formData.price),
       discountPrice: formData.discountPrice ? parseFloat(formData.discountPrice) : null,
       stockQuantity: parseInt(formData.stockQuantity, 10),
+      weight: formData.weight ? parseFloat(formData.weight) : null,
+      thumbnailImage: cleanedImages[0] || "/images/products/placeholder.png",
     };
     onSubmit(payload);
   };
@@ -150,12 +179,12 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
           <h3 className="text-lg font-medium border-b pb-2">Pricing & Inventory</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
-              <input type="number" step="0.01" name="price" required value={formData.price} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Price (PKR) *</label>
+              <input type="number" step="1" name="price" required value={formData.price} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Discount Price</label>
-              <input type="number" step="0.01" name="discountPrice" value={formData.discountPrice} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+              <input type="number" step="1" name="discountPrice" value={formData.discountPrice} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity *</label>
@@ -168,17 +197,22 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
           </div>
         </div>
 
-        {/* Organization */}
+        {/* Attributes & Organization */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium border-b pb-2">Organization</h3>
-          <div className="space-y-4">
-            <div>
+          <h3 className="text-lg font-medium border-b pb-2">Attributes & Organization</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-              <input type="text" name="category" required value={formData.category} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+              <select name="categoryId" required value={formData.categoryId} onChange={handleChange} className="w-full px-3 py-2 border rounded-md">
+                <option value="">Select Category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-              <input type="text" name="brand" value={formData.brand} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Brand *</label>
+              <input type="text" name="brand" required value={formData.brand} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -187,6 +221,37 @@ export default function ProductForm({ initialData, onSubmit, isSubmitting }) {
                 <option value="PUBLISHED">Published</option>
                 <option value="OUT_OF_STOCK">Out of Stock</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Color *</label>
+              <input type="text" name="color" required value={formData.color} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" placeholder="e.g. Black" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Material *</label>
+              <input type="text" name="material" required value={formData.material} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" placeholder="e.g. Leather" />
+            </div>
+          </div>
+        </div>
+
+        {/* Shipping & Specs */}
+        <div className="space-y-4 md:col-span-2">
+          <h3 className="text-lg font-medium border-b pb-2">Physical Specifications</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Weight (grams)</label>
+              <input type="number" name="weight" value={formData.weight} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions (e.g. 12x10x5 cm)</label>
+              <input type="text" name="dimensions" value={formData.dimensions} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Warranty Details</label>
+              <input type="text" name="warranty" value={formData.warranty} onChange={handleChange} className="w-full px-3 py-2 border rounded-md" />
+            </div>
+            <div className="md:col-span-3 flex items-center">
+              <input type="checkbox" id="featuredProduct" name="featuredProduct" checked={formData.featuredProduct} onChange={handleChange} className="h-4 w-4 text-[#800020] border-gray-300 rounded focus:ring-[#800020]" />
+              <label htmlFor="featuredProduct" className="ml-2 block text-sm font-medium text-gray-900">Mark as Featured Product</label>
             </div>
           </div>
         </div>

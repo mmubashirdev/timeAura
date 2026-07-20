@@ -57,20 +57,12 @@ const PAYMENT_METHODS = [
 export default function Footer() {
   return (
     <footer className="w-full bg-[#FAFAFA] border-t border-neutral-200">
-      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
-        <div className="col-span-2">
+      <div className="max-w-7xl mx-auto px-3 py-12 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+        <div className="lg:col-span-1">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-full border-2 border-[#800020] flex items-center justify-center">
-              <span className="font-serif text-lg font-bold text-[#800020]">
-                A
-              </span>
-            </div>
             <div className="leading-tight">
               <div className="font-serif text-lg font-bold tracking-[0.15em]">
                 TIME AURA
-              </div>
-              <div className="text-[9px] tracking-[0.25em] text-neutral-500">
-                CRAFTING MOMENTS
               </div>
             </div>
           </div>
@@ -144,6 +136,23 @@ export default function Footer() {
             </li>
           </ul>
         </div>
+
+        <div className="lg:col-span-2">
+          <h4 className="text-[11px] font-bold tracking-[0.2em] text-neutral-900 mb-4">
+            OUR LOCATION
+          </h4>
+          <div className="w-full h-32 md:h-40 rounded-xl overflow-hidden border border-neutral-200 shadow-sm bg-neutral-100">
+            <iframe
+              src="https://maps.google.com/maps?q=MM%20Alam%20Road,%20Gulberg%20III,%20Lahore,%20Pakistan&t=&z=14&ie=UTF8&iwloc=&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+        </div>
       </div>
 
       <div className="border-t border-neutral-200">
@@ -161,9 +170,6 @@ export default function Footer() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] tracking-[0.15em] text-neutral-500">
-              WE ACCEPT
-            </span>
             <ul className="flex items-center gap-2">
               {PAYMENT_METHODS.map(({ label, icon: Icon }) => (
                 <li
