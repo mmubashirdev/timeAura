@@ -1,12 +1,14 @@
 import SectionCard from "./SectionCard";
 import StatusBadge from "./StatusBadge";
-import { recentOrders } from "../data/dashboardData";
+import { recentOrders as mockOrders } from "../data/dashboardData";
 
-export default function RecentOrdersCard() {
+export default function RecentOrdersCard({ data }) {
+  const orders = data && data.length > 0 ? data : mockOrders;
+
   return (
-    <SectionCard title="Recent Orders" action="View All" actionHref="#">
+    <SectionCard title="Recent Orders" action="View All" actionHref="/admin/orders">
       <div className="divide-y divide-border">
-        {recentOrders.map((order) => (
+        {orders.map((order) => (
           <div
             key={order.id}
             className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"

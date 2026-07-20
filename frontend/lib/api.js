@@ -129,6 +129,7 @@ export const ordersApi = {
   getById: (id) => request(`/orders/${id}`, { auth: true }),
   create: (data) => request("/orders", { method: "POST", body: data }),
   updateStatus: (id, data) => request(`/orders/${id}/status`, { method: "PUT", body: data, auth: true }),
+  getStats: () => request("/orders/stats", { auth: true }),
 };
 
 export const customersApi = {
@@ -167,6 +168,8 @@ export const uploadsApi = {
     
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Upload failed");
-    return data;
+    // The API wraps the payload in { success, message, data: { url } }
+    // Return the inner data object so callers can do result.url
+    return data.data ?? data;
   },
 };

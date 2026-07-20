@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import TextType from "@/components/ui/TextType";
 import {
   Play,
   ArrowRight,
@@ -41,7 +42,20 @@ export default function Hero() {
             Made for <span className="text-[#800020]">You.</span>
           </h1>
           <p className="text-neutral-600 text-base leading-relaxed max-w-md mb-8">
-            Discover watches, wallets, perfumes
+            Discover{" "}
+            <TextType
+              as="span"
+              text={["luxury watches.", "premium wallets.", "fine perfumes."]}
+              typingSpeed={70}
+              deletingSpeed={40}
+              pauseDuration={1800}
+              showCursor={true}
+              cursorCharacter="|"
+              cursorBlinkDuration={0.5}
+              loop={true}
+              textColors={["#800020", "#C9A14A", "#800020"]}
+              className="font-semibold"
+            />
           </p>
 
           <div className="flex items-center gap-4 mb-12">
@@ -97,7 +111,7 @@ export default function Hero() {
           <div
             id="fly-wallet"
             data-fly="wallet"
-            className="absolute left-[5%] top-[38%] w-[45%] aspect-square"
+            className="absolute left-[-15%] top-[30%] w-[70%] aspect-square"
           >
             <Image
               src="/images/products/wallet.png"
@@ -111,7 +125,7 @@ export default function Hero() {
           <div
             id="fly-watch"
             data-fly="watch"
-            className="absolute left-[30%] top-[12%] w-[45%] aspect-square z-10"
+            className="absolute left-[-10%] top-[-10%] w-[60%] aspect-square z-10"
           >
             <Image
               src="/images/products/watch.png"
@@ -125,7 +139,7 @@ export default function Hero() {
           <div
             id="fly-perfume"
             data-fly="perfume"
-            className="absolute right-[2%] top-[10%] w-[38%] aspect-[2/3]"
+            className="absolute right-[-12%] top-[-20%] w-[80%] aspect-[2/3]"
           >
             <Image
               src="/images/products/perfume.png"

@@ -2,6 +2,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "@/components/ui/sonner";
 import QueryProvider from "@/components/providers/QueryProvider";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
               style: { borderRadius: "16px", fontFamily: "var(--font-inter)" },
             }}
           />
+          <WhatsAppButton />
         </QueryProvider>
         {/* Google Identity Services — loaded once, available everywhere */}
         <Script

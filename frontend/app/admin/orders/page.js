@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ordersApi } from "@/lib/api";
+import { formatPKR } from "@/lib/format";
 import { Eye, Clock } from "lucide-react";
 
 export default function AdminOrdersPage() {
@@ -88,7 +89,7 @@ export default function AdminOrdersPage() {
                     {order.customer?.name || "Unknown"}
                     <div className="text-xs text-gray-500">{order.customer?.email}</div>
                   </td>
-                  <td className="px-6 py-4 font-medium">${order.totalAmount.toFixed(2)}</td>
+                  <td className="px-6 py-4 font-medium">{formatPKR(order.totalAmount)}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                       {order.status}
@@ -126,7 +127,7 @@ export default function AdminOrdersPage() {
                 <h4 className="font-medium text-gray-500 mb-2">Order Information</h4>
                 <p><strong>ID:</strong> {selectedOrder.id}</p>
                 <p><strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
-                <p><strong>Total:</strong> ${selectedOrder.totalAmount.toFixed(2)}</p>
+                <p><strong>Total:</strong> {formatPKR(selectedOrder.totalAmount)}</p>
                 <p><strong>Payment:</strong> {selectedOrder.paymentMethod}</p>
               </div>
               
@@ -144,7 +145,7 @@ export default function AdminOrdersPage() {
                         <p className="font-medium">{item.product?.name || "Unknown Product"}</p>
                         <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                       </div>
-                      <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-medium">{formatPKR(item.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>

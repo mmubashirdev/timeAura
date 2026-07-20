@@ -1,12 +1,14 @@
 import { CreditCard, CheckCircle, Clock } from "lucide-react";
 import SectionCard from "./SectionCard";
-import { recentPayments } from "../data/dashboardData";
+import { recentPayments as mockPayments } from "../data/dashboardData";
 
-export default function RecentPaymentsCard() {
+export default function RecentPaymentsCard({ data }) {
+  const payments = data && data.length > 0 ? data : mockPayments;
+
   return (
-    <SectionCard title="Recent Payments" action="View All" actionHref="#">
+    <SectionCard title="Recent Payments" action="View All" actionHref="/admin/orders">
       <div className="divide-y divide-border">
-        {recentPayments.map((payment) => (
+        {payments.map((payment) => (
           <div
             key={payment.id}
             className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"

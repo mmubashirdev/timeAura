@@ -11,6 +11,7 @@ import { formatPKR } from "@/lib/format";
 import { validateCoupon, CART_CONFIG } from "@/lib/cart";
 
 export default function CartSummary({
+  items,
   itemCount,
   subtotal,
   shipping,
@@ -174,9 +175,22 @@ export default function CartSummary({
         <motion.div whileTap={{ scale: 0.98 }} className="mt-5">
           <Button
             disabled={itemCount === 0}
-            className="w-full h-12 rounded-2xl bg-[#800020] hover:bg-[#5c0016] text-white text-sm font-semibold tracking-wide disabled:opacity-50"
+            onClick={() => {
+              const itemsList = items?.map(item => {
+                const color = item.color || (item.colors && item.colors[0]) || "";
+                const material = item.material || item.strap || "";
+                let variantInfo = [];
+                if (color && color !== "Classic") variantInfo.push(`${color} Case`);
+                if (material) variantInfo.push(`${material} Strap`);
+                const variantStr = variantInfo.length ? ` (${variantInfo.join(', ')})` : '';
+                return `- ${item.qty}x ${item.name}${variantStr}`;
+              }).join('\n') || '';
+              const text = `Hi, I would like to place an order for:\n${itemsList}\n\nTotal: ${formatPKR(total)}`;
+              window.open(`https://wa.me/923127721817?text=${encodeURIComponent(text)}`, "_blank");
+            }}
+            className="w-full h-12 rounded-2xl bg-[#25D366] hover:bg-[#128C7E] text-white text-sm font-semibold tracking-wide disabled:opacity-50"
           >
-            <Lock className="w-4 h-4" /> Proceed to Checkout
+            Buy Now on WhatsApp
           </Button>
         </motion.div>
 

@@ -51,7 +51,7 @@ export default function CartItem({
         className="relative w-full sm:w-32 md:w-36 aspect-square shrink-0 bg-neutral-50 rounded-xl overflow-hidden group"
       >
         <Image
-          src={item.image}
+          src={item.image || "/images/products/placeholder.png"}
           alt={item.name}
           fill
           className="object-contain p-4 group-hover:scale-105 transition-transform"

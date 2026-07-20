@@ -35,11 +35,11 @@ export default function AdminSettingsPage() {
           <div className="space-y-2">
             <label className="flex items-center gap-2">
               <input type="checkbox" defaultChecked className="rounded text-[#800020] focus:ring-[#800020]" />
-              Credit Card (Stripe)
+              Credit Card
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" defaultChecked className="rounded text-[#800020] focus:ring-[#800020]" />
-              PayPal
+              JAZZCASH
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" className="rounded text-[#800020] focus:ring-[#800020]" />

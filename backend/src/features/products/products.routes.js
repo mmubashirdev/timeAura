@@ -16,13 +16,15 @@ const router = express.Router();
 router.get("/filters", asyncHandler(productsController.getFilters));
 router.get("/:slug/related", asyncHandler(productsController.getRelated));
 router.get("/id/:id", asyncHandler(productsController.getById));
-router.get("/:slug", asyncHandler(productsController.getBySlug));
 
+// NOTE: GET / must be before GET /:slug so the wildcard doesn't swallow list requests
 router.get(
   "/",
   validateQuery(listProductsSchema),
   asyncHandler(productsController.list)
 );
+
+router.get("/:slug", asyncHandler(productsController.getBySlug));
 
 // Admin-only routes
 router.post(

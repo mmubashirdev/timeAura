@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { formatPKR } from "@/lib/format";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 const CASE_COLORS = [
   { id: "rose", name: "Rose Gold", hex: "#c9a07a" },
@@ -30,20 +32,28 @@ export default function ProductInfo({ product }) {
   const { add } = useCart();
   const { has, toggle } = useWishlist();
   const wished = has(product.id);
+  
+  const { data: userResp } = useCurrentUser();
+  const user = userResp?.data?.user;
+  const router = useRouter();
 
   const [qty, setQty] = useState(1);
   const [caseColor, setCaseColor] = useState(CASE_COLORS[0]);
   const [strapColor, setStrapColor] = useState(STRAP_COLORS[0]);
 
   const handleAdd = () => {
+    if (!user) {
+      toast.error("Please create an account to add items to your cart");
+      router.push("/register");
+      return;
+    }
     add(product, qty);
     toast.success(`${product.name} × ${qty} added to cart`);
   };
 
   const handleBuyNow = () => {
-    add(product, qty);
-    toast.success("Proceeding to checkout…");
-    // Route to /checkout when it exists
+    const text = `Hi, I would like to buy ${qty}x ${product.name} (${caseColor.name} Case, ${strapColor.name} Strap). Price: ${formatPKR(product.price * qty)}.`;
+    window.open(`https://wa.me/923127721817?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   const handleWish = () => {
@@ -159,9 +169,9 @@ export default function ProductInfo({ product }) {
           onClick={handleBuyNow}
           variant="outline"
           size="lg"
-          className="h-12 text-sm border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white"
+          className="h-12 text-sm border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white"
         >
-          Buy Now
+          Buy Now on WhatsApp
         </Button>
       </div>
 

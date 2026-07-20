@@ -69,8 +69,15 @@ class ProductsService {
 
     if (filters.min != null || filters.max != null) {
       where.price = {};
-      if (filters.min != null) where.price.gte = filters.min;
-      if (filters.max != null) where.price.lte = filters.max;
+      if (filters.min != null && !isNaN(parseInt(filters.min, 10))) {
+        where.price.gte = parseInt(filters.min, 10);
+      }
+      if (filters.max != null && !isNaN(parseInt(filters.max, 10))) {
+        where.price.lte = parseInt(filters.max, 10);
+      }
+      if (Object.keys(where.price).length === 0) {
+        delete where.price;
+      }
     }
 
     if (filters.brands && filters.brands.length) where.brand = { in: filters.brands };
@@ -91,8 +98,8 @@ class ProductsService {
       where.status = filters.status;
     }
 
-    const page = filters.page || 1;
-    const pageSize = filters.pageSize || 12;
+    const page = parseInt(filters.page, 10) || 1;
+    const pageSize = parseInt(filters.pageSize, 10) || 12;
     const skip = (page - 1) * pageSize;
 
     const [items, total] = await Promise.all([

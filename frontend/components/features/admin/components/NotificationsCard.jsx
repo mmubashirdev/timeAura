@@ -7,6 +7,8 @@ import {
 import SectionCard from "./SectionCard";
 import { notifications } from "../data/dashboardData";
 
+import { notifications as mockNotifications } from "../data/dashboardData";
+
 const typeConfig = {
   order: { icon: Package, color: "text-maroon", bg: "bg-red-50" },
   payment: { icon: CheckCircle, color: "text-status-completed", bg: "bg-green-50" },
@@ -14,11 +16,13 @@ const typeConfig = {
   user: { icon: UserPlus, color: "text-status-shipped", bg: "bg-blue-50" },
 };
 
-export default function NotificationsCard() {
+export default function NotificationsCard({ data }) {
+  const list = data && data.length > 0 ? data : mockNotifications;
+
   return (
-    <SectionCard title="Latest Notifications" action="View All" actionHref="#">
+    <SectionCard title="Latest Notifications" action="View All" actionHref="/admin/notifications">
       <div className="divide-y divide-border">
-        {notifications.map((notif, idx) => {
+        {list.map((notif, idx) => {
           const config = typeConfig[notif.type] || typeConfig.order;
           const Icon = config.icon;
 
