@@ -21,7 +21,12 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000" || "https://frontend.ngrok-free.app",
+    origin: [
+      process.env.FRONTEND_URL,
+      "http://localhost:3000",
+      "https://time-aura-zeta.vercel.app",
+      "https://frontend.ngrok-free.app"
+    ].filter(Boolean),
     credentials: true,
   }),
 );
