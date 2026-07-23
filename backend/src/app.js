@@ -15,6 +15,7 @@ const customerRoutes = require("./features/customers/customers.routes");
 const notificationRoutes = require("./features/notifications/notifications.routes");
 const errorHandler = require("./shared/middlewares/errorHandler");
 const { NotFoundError } = require("./shared/errors/AppError");
+const requestLogger = require("./shared/middlewares/requestLogger");
 
 const app = express();
 
@@ -35,7 +36,7 @@ app.use(
       process.env.FRONTEND_URL,
       "http://localhost:3000",
       "https://time-aura-zeta.vercel.app",
-      "https://frontend.ngrok-free.app"
+      "https://frontend.ngrok-free.app",
     ].filter(Boolean),
     credentials: true,
   }),
@@ -43,7 +44,8 @@ app.use(
 app.use(compression());
 app.use(express.json());
 app.use(cookieParser());
-app.use(pinoHttp());
+
+app.use(requestLogger);
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);

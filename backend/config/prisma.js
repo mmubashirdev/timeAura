@@ -3,9 +3,9 @@ const env = require("./env");
 
 const prisma = new PrismaClient({
   log:
-    env.NODE_ENV === "development"
-      ? ["query", "warn", "error"]
-      : ["warn", "error"],
+    process.env.NODE_ENV === "production"
+      ? ["error", "warn"]
+      : ["query", "error", "warn"],
 });
 
 module.exports = prisma;
