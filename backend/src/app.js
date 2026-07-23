@@ -19,6 +19,7 @@ const { NotFoundError } = require("./shared/errors/AppError");
 const app = express();
 
 app.set("trust proxy", true);
+console.log("TRUST PROXY:", app.get("trust proxy"));
 
 app.get("/health", (req, res) => {
   res.status(200).json({
