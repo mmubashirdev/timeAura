@@ -10,7 +10,7 @@ const {
 } = require("../../shared/utils/jwt");
 const {
   ConflictError,
-  UnauthorizedError,
+  UnauthorizedError,  
   ForbiddenError,
   NotFoundError,
 } = require("../../shared/errors/AppError");
@@ -20,6 +20,7 @@ const {
   otpTemplate,
   otpPlainText,
 } = require("../../shared/utils/emailTemplate");
+const logger = require("../../shared/utils/logger");
 
 function toSafeUser(user) {
   return {
@@ -145,9 +146,15 @@ class AuthService {
       role: roles.STAFF,
     });
 
-    await this.#issueAndSendOtp(user, "EMAIL_VERIFICATION");
+    // Fire-and-forget: registration succeeded regardless of email deliverability.
+    // A failed send just means the user hits "resend code" — which already exists.
+    this.#issueAndSendOtp(user, "EMAIL_VERIFICATION").catch((err) => {
+       logger.error(
+         { err, userId: user.id },
+         "Failed to send verification OTP",
+       );
+    });
 
-    // Deliberately no tokens returned — an unverified account cannot log in yet.
     return {
       message:
         "Registration successful. Check your email for a verification code.",

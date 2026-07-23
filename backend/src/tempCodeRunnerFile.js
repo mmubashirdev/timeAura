@@ -1,0 +1,1 @@
+console.log(encodeURIComponent('whj*!J"Yc=y3_)4'));

@@ -1,11 +1,17 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
 const env = require("../../../config/env");
+
+dns.setDefaultResultOrder("ipv4first"); // fixes the ENETUNREACH you just hit
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: Number(env.SMTP_PORT),
-  secure: Number(env.SMTP_PORT) === 465,
+  secure: true,
   auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 10_000,
 });
 
 async function sendMail({ to, subject, html, text }) {
@@ -15,7 +21,6 @@ async function sendMail({ to, subject, html, text }) {
     subject,
     html,
     text,
-    // Helps some providers when clients show a plain-text fallback.
   });
 }
 

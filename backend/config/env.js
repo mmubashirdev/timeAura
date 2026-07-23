@@ -2,16 +2,14 @@ const { z } = require("zod");
 
 // config/env.js
 const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
-  PORT: z.string().default("5000"),
+  NODE_ENV: z.enum(["development", "production", "test"]),
+  PORT: z.coerce.number().int().positive().default(5000),
   DATABASE_URL: z.string().min(1),
   ACCESS_TOKEN_SECRET: z.string().min(32),
   REFRESH_TOKEN_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL: z.string().default("15m"),
   REFRESH_TOKEN_TTL: z.string().default("7d"),
-  BCRYPT_SALT_ROUNDS: z.string().default("12"),
+  BCRYPT_SALT_ROUNDS: z.string().default(12),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.string().default("587"),
   SMTP_USER: z.string().min(1),
@@ -26,7 +24,10 @@ const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {
   console.error("❌ Invalid environment variables:");
   console.error(parsed.error.flatten().fieldErrors);
-  process.exit(1); // crash on boot, not on the first request that needs the missing var
+  process.exit(1);
 }
 
-module.exports = parsed.data;
+const data = parsed.data;
+data.EMAIL_FROM = data.EMAIL_FROM || `"Time Aura" <${data.SMTP_USER}>`;
+
+module.exports = data;
