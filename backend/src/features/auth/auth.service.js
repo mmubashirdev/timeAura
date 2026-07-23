@@ -108,7 +108,11 @@ class AuthService {
           : "If you didn't request a password reset, simply ignore this email.",
     });
 
-    await sendMail({ to: user.email, subject, html, text });
+     try {
+       await sendMail({ to: user.email, subject, html, text });
+     } catch (err) {
+       logger.error({ err, userId: user.id, type }, "Failed to send OTP email");
+     }
   }
 
   async #verifyOtp(user, type, code) {

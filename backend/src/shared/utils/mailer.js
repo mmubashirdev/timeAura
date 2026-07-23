@@ -4,10 +4,11 @@ const env = require("../../../config/env");
 
 dns.setDefaultResultOrder("ipv4first"); // fixes the ENETUNREACH you just hit
 
+const port = Number(env.SMTP_PORT);
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
-  port: Number(env.SMTP_PORT),
-  secure: true,
+  port,
+  secure: port === 465, // true only for 465 (implicit TLS); false lets STARTTLS upgrade on 587
   auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   connectionTimeout: 10_000,
   greetingTimeout: 10_000,
