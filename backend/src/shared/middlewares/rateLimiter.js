@@ -18,7 +18,7 @@ const otpRequestLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
-  validate: false,
+  
 
   message: {
     success: false,
