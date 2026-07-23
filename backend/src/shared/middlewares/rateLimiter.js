@@ -18,6 +18,8 @@ const otpRequestLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
+  validate: false,
+
   message: {
     success: false,
     message: "Too many requests. Please wait before requesting another code.",
