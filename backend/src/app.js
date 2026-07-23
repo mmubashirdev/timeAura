@@ -19,6 +19,14 @@ const { NotFoundError } = require("./shared/errors/AppError");
 const app = express();
 
 app.set("trust proxy", 1);
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date(),
+  });
+});
+
 app.use(helmet());
 app.use(
   cors({
