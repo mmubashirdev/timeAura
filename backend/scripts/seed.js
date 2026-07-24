@@ -518,12 +518,11 @@ async function main() {
   console.log(`   📦 Products    : ${allProducts.length}`);
   console.log(`   📂 Categories  : ${CATEGORIES.length}`);
   console.log(`   🏷️  Coupons     : ${COUPONS.length}`);
-  console.log(`   👥 Customers   : ${CUSTOMER_DATA.length}`);
   console.log(`   🛒 Orders      : ${totalOrders}`);
   console.log(`   🔔 Notifications: 10`);
   console.log("\n   🔑 Admin credentials:");
-  console.log("      Email   : admin@timeaura.com");
-  console.log("      Password: admin123");
+  console.log("      Email   : timeaura.online@gmail.com");
+  console.log("      Password: admin@ura786");
   console.log("─────────────────────────────────────────────\n");
 }
 
