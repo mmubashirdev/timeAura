@@ -4,30 +4,27 @@ const env = require("../../../config/env");
 
 dns.setDefaultResultOrder("ipv4first"); // fixes the ENETUNREACH you just hit
 
+function ipv4Lookup(hostname, options, callback) {
+  if (typeof options === "function") {
+    callback = options;
+    options = {};
+  }
+  return dns.lookup(hostname, { ...options, family: 4, all: false }, callback);
+}
+
 const port = Number(env.SMTP_PORT) || 465;
-const isGmail = env.SMTP_HOST?.toLowerCase().includes("gmail");
 
-const transportOptions = isGmail
-  ? {
-      service: "gmail",
-      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
-      family: 4,
-      connectionTimeout: 20_000,
-      greetingTimeout: 20_000,
-      socketTimeout: 20_000,
-    }
-  : {
-      host: env.SMTP_HOST,
-      port,
-      secure: port === 465,
-      auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
-      family: 4,
-      connectionTimeout: 20_000,
-      greetingTimeout: 20_000,
-      socketTimeout: 20_000,
-    };
-
-const transporter = nodemailer.createTransport(transportOptions);
+const transporter = nodemailer.createTransport({
+  host: env.SMTP_HOST || "smtp.gmail.com",
+  port,
+  secure: port === 465,
+  auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+  family: 4,
+  lookup: ipv4Lookup,
+  connectionTimeout: 20_000,
+  greetingTimeout: 20_000,
+  socketTimeout: 20_000,
+});
 
 async function sendMail({ to, subject, html, text }) {
   if (env.RESEND_API_KEY) {
