@@ -30,6 +30,30 @@ const transportOptions = isGmail
 const transporter = nodemailer.createTransport(transportOptions);
 
 async function sendMail({ to, subject, html, text }) {
+  if (env.RESEND_API_KEY) {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.EMAIL_FROM.includes("resend.dev") ? env.EMAIL_FROM : "Time Aura <onboarding@resend.dev>",
+        to: [to],
+        subject,
+        html,
+        text,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Resend API Error: ${response.status} ${JSON.stringify(errorData)}`);
+    }
+
+    return response.json();
+  }
+
   return transporter.sendMail({
     from: env.EMAIL_FROM,
     to,

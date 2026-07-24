@@ -15,6 +15,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
   EMAIL_FROM: z.string().default("'Time Aura' <${env.SMTP_USER}>"),
+  RESEND_API_KEY: z.string().optional(),
   OTP_TTL_MINUTES: z.string().default("10"),
   OTP_MAX_ATTEMPTS: z.string().default("5"),
   GOOGLE_CLIENT_ID: z.string().min(1), // Web client ID from Google Cloud Console
