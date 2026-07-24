@@ -16,6 +16,7 @@ const notificationRoutes = require("./features/notifications/notifications.route
 const errorHandler = require("./shared/middlewares/errorHandler");
 const { NotFoundError } = require("./shared/errors/AppError");
 const requestLogger = require("./shared/middlewares/requestLogger");
+require("dotenv").config();
 
 const app = express();
 
