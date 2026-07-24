@@ -11,7 +11,7 @@ const envSchema = z.object({
   REFRESH_TOKEN_TTL: z.string().default("7d"),
   BCRYPT_SALT_ROUNDS: z.string().default(12),
   SMTP_HOST: z.string().min(1),
-  SMTP_PORT: z.string().default("587"),
+  SMTP_PORT: z.string().default("465"),
   SMTP_USER: z.string().min(1),
   SMTP_PASS: z.string().min(1),
   EMAIL_FROM: z.string().default("'Time Aura' <${env.SMTP_USER}>"),
