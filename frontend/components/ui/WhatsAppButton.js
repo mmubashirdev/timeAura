@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-const WHATSAPP_NUMBER = "923127721817";
+const WHATSAPP_NUMBER = "923462656488";
 const WHATSAPP_MESSAGE = "Hello! I'm interested in buying your products.";
 
 export default function WhatsAppButton() {
