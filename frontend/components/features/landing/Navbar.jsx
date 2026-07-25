@@ -13,8 +13,6 @@ const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Collections", href: "/collections", hasDropdown: true },
   { label: "About Us", href: "/about" },
-  { label: "Features", href: "/features" },
-  { label: "Reviews", href: "/reviews" },
   { label: "Contact", href: "/contact" },
 ];
 

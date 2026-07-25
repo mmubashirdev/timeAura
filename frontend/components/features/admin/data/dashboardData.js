@@ -1,14 +1,10 @@
 import {
   LayoutGrid,
   Package,
-  CreditCard,
   Box,
   Users,
   Bell,
-  Star,
   LayoutList,
-  Ticket,
-  BarChart2,
   Settings,
 } from "lucide-react";
 
@@ -16,14 +12,10 @@ import {
 export const navItems = [
   { label: "Dashboard", icon: LayoutGrid, href: "/admin", active: true },
   { label: "Orders", icon: Package, href: "/admin/orders" },
-  { label: "Payments", icon: CreditCard, href: "/admin/payments" },
   { label: "Products", icon: Box, href: "/admin/products" },
   { label: "Users", icon: Users, href: "/admin/users" },
   { label: "Notifications", icon: Bell, href: "/admin/notifications" },
-  { label: "Reviews", icon: Star, href: "/admin/reviews" },
   { label: "Categories", icon: LayoutList, href: "/admin/categories" },
-  { label: "Coupons", icon: Ticket, href: "/admin/coupons" },
-  { label: "Reports", icon: BarChart2, href: "/admin/reports" },
   { label: "Settings", icon: Settings, href: "/admin/settings" },
 ];
 
