@@ -45,13 +45,17 @@ export default function AdminSettingsPage() {
               <input type="checkbox" className="rounded text-[#800020] focus:ring-[#800020]" />
               Bank Transfer
             </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" className="rounded text-[#800020] focus:ring-[#800020]" />
+              COD
+            </label>
           </div>
         </div>
 
         <div>
           <h3 className="text-lg font-medium border-b pb-2 mb-4">Shipping Zones</h3>
           <div className="p-4 border rounded-md bg-gray-50 text-sm text-gray-600">
-            Shipping zones configuration will go here.
+            Lahore
           </div>
         </div>
 

@@ -62,12 +62,6 @@ export default function Hero() {
             <Button className="h-12 px-6 rounded-xl bg-[#5c0016] hover:bg-[#4a0011] text-white text-sm font-semibold gap-2">
               Shop Now <ArrowRight className="w-4 h-4" />
             </Button>
-            <button className="flex items-center gap-3 text-sm font-medium text-neutral-700 hover:text-[#800020] transition-colors">
-              <span className="w-10 h-10 rounded-full border-2 border-[#800020] flex items-center justify-center">
-                <Play className="w-3.5 h-3.5 text-[#800020] fill-[#800020] ml-0.5" />
-              </span>
-              Watch Story
-            </button>
           </div>
 
           {/* Feature strip */}
