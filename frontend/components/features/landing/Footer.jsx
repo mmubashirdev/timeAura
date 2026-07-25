@@ -146,10 +146,10 @@ export default function Footer() {
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d27244.596681836232!2d74.13754856384551!3d31.398291699235575!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3918ff079b2e55fb%3A0xb89f575b49294708!2sShahkam%20Chowk%2C%20Canal%20Bank%20Rd%2C%20Bahria%20Town%2C%20Lahore%2C%20Pakistan!5e0!3m2!1sen!2s!4v1785007542367!5m2!1sen!2s"
               width="600"
               height="450"
-              style="border:0;"
-              allowfullscreen=""
+              style={{ border: 0 }}
+              allowFullScreen
               loading="lazy"
-              referrerpolicy="strict-origin-when-cross-origin"
+              referrerPolicy="strict-origin-when-cross-origin"
             ></iframe>
           </div>
         </div>

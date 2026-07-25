@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 export default function CollectionsHero() {
   return (
     <section className="w-full bg-[#faf5f2]">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 items-center gap-8 py-10 lg:py-14">
+      <div className="max-w-5xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 items-center gap-8 py-8 lg:py-14">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

@@ -15,7 +15,7 @@ export default function LocationMap() {
       <div className="relative flex-1 min-h-[320px] rounded-xl overflow-hidden bg-[#f3ede6]">
         <iframe
           title="Lahore Garrison University"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3403.188129237966!2d74.44005497479702!3d31.464010649925747!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x391908dd6138ade3%3A0xa6cc469044e1fbc1!2sLahore%20Garrison%20University.!5e0!3m2!1sen!2s!4v1783964176217!5m2!1sen!2s"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d27244.596681836232!2d74.13754856384551!3d31.398291699235575!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3918ff079b2e55fb%3A0xb89f575b49294708!2sShahkam%20Chowk%2C%20Canal%20Bank%20Rd%2C%20Bahria%20Town%2C%20Lahore%2C%20Pakistan!5e0!3m2!1sen!2s!4v1785007542367!5m2!1sen!2s"
           width="600"
           height="450"
           style={{ border: 0 }}
